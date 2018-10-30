@@ -5,8 +5,6 @@ import pandas as pd
 np.random.seed(42)
 matplotlib.rc('text', usetex = True)
 
-
-
 class SolveMinProbl(object):
 	def __init__(self,y,A):
 		self.matr=A
