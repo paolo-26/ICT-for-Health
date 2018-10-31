@@ -1,3 +1,6 @@
+"""
+@author: Paolo Grasso
+"""
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -9,16 +12,16 @@ import copy
 
 np.random.seed(42)
 
-#matplotlib.rc('text', usetex = True)
+matplotlib.rc('text', usetex = True)
 
 class SolveMinProbl(object):
 	def __init__(self,y,A,Xval,yval):
 		self.matr=A
 		self.Np=y.shape[0]
 		self.Nf=A.shape[1]
-		self.vect=y
+		self.vect=y.reshape(self.Np,1)
 		self.sol=np.zeros((self.Nf,1),dtype=float)
-		self.y_val=yval
+		self.y_val=yval.reshape(len(yval),1)
 		self.X_val=Xval
 		self.err=[]
 		self.errval=[]
@@ -29,13 +32,14 @@ class SolveMinProbl(object):
 		n=np.arange(self.Nf)
 		plt.figure()
 		plt.stem(n,w.reshape(len(w),))
-		plt.xlabel('$n$')
+		#plt.xlabel('$n$')
 		plt.ylabel('$w(n)$')
-		plt.xticks(ticks=range(self.Nf),labels=[r'motor$_{UPDRS}$',r'total$_{UPDRS}$',r'Jitter$_{\%}$',r'Jitter$_{Abs}$',r'Jitter$_{RAP}$','Jitter:PPQ5','Jitter:DDP','Shimmer(dB)','Shimmer:APQ3','Shimmer:APQ5',r'Shimmer$_{APQ11}$','Shimmer:DDA','NHR','HNR','RPDE','DFA','PPE'],rotation='vertical')
+		plt.xticks(ticks=range(self.Nf),labels=[r'UPDRS$_{\mathrm{Motor}}$',r'UPDRS$_{\mathrm{Total}}$',r'Jitter$_{(\%)}$',r'Jitter$_{\mathrm{(Abs)}}$',r'Jitter$_{\mathrm{RAP}}$',r'Jitter$_{\mathrm{PPQ5}}$',r'Jitter$_{\mathrm{DDP}}$',r'Shimmer$_{\mathrm{(dB)}}$',r'Shimmer$_{\mathrm{APQ3}}$',r'Shimmer$_{\mathrm{APQ5}}$',r'Shimmer$_{\mathrm{APQ11}}$',r'Shimmer$_{\mathrm{DDA}}$','NHR','HNR','RPDE','DFA','PPE'],rotation='vertical')
 		plt.title(title)
 		plt.grid(which='both')
 		#plt.show()
 		plt.ylim([-0.5,0.5])
+		plt.subplots_adjust(bottom=0.25)
 		#plt.savefig("w"+title+".pdf")
 		return
 
@@ -69,7 +73,10 @@ class SolveMinProbl(object):
 
 	def graphics(self):
 		plt.figure()
-		plt.hist(self.vect-self.yhat,bins=50)
+		vect=self.vect.reshape(len(self.vect),)
+		yhat=self.yhat.reshape(len(self.yhat),)
+		plt.hist(vect-yhat,bins=50)
+		print("---")
 		plt.title(r'$y_{train} - \hat{y}_{train}$')
 		plt.xlabel('Error')
 		plt.ylabel('Number of entries')
@@ -101,8 +108,7 @@ class SolveGrad(SolveMinProbl):
 		#self.err = []
 		A=self.matr
 		y=self.vect
-		y=y.reshape(self.Np,1)
-		self.y_val=self.y_val.reshape(len(self.y_val),1)
+		#y=y.reshape(self.Np,1)
 		w=np.random.rand(self.Nf,1)
 		
 		for it in range(Nit):
@@ -135,7 +141,7 @@ class SolveStochasticGradient(SolveMinProbl):
 		#self.err=[]
 		A=self.matr
 		y=self.vect
-		y=y.reshape(self.Np,1)
+		#y=y.reshape(self.Np,1)
 		w=np.random.rand(self.Nf,1)
 
 
@@ -165,7 +171,7 @@ class SolveConjugateGradient(SolveMinProbl):
 		#self.err=[]
 		A=self.matr
 		y=self.vect
-		y=y.reshape(self.Np,1)
+		#y=y.reshape(self.Np,1)
 		w = np.zeros((self.Nf,1),dtype=float)
 		Q = np.dot(A.T,A)
 		b = np.dot(A.T,y)
@@ -186,7 +192,8 @@ class SolveConjugateGradient(SolveMinProbl):
 
 			#self.err[it,0]=it
 			#self.err[it,1]=np.linalg.norm(np.dot(A,w)-y)**2
-			self.err.append(np.linalg.norm(np.dot(A,w)-y)**2)
+			self.err.append(np.linalg.norm(np.dot(A,w)-y)**2/self.Np)
+			self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
 			#print(self.err[it,1])
 
 		self.sol=w
@@ -200,7 +207,7 @@ class SolveSteepestDescent(SolveMinProbl):
 		#self.err=[]
 		A=self.matr
 		y=self.vect
-		y=y.reshape(self.Np,1)
+		#y=y.reshape(self.Np,1)
 		w=np.random.rand(self.Nf,1)
 
 		for it in range(Nit):        
@@ -222,7 +229,7 @@ class SolveSteepestDescent(SolveMinProbl):
 		self.yhat=np.dot(A,self.sol).reshape(len(y),)
 
 class SolveRidge(SolveMinProbl):
-	def run(self,Lambda=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]):
+	def run(self,Lambda=range(0,200)):
 		#self.err=np.zeros((Nit,2),dtype=float)
 		#self.err=[]
 		#self.errval=[]
@@ -230,8 +237,7 @@ class SolveRidge(SolveMinProbl):
 		for l in Lambda:
 			A=self.matr
 			y=self.vect
-			y=y.reshape(self.Np,1)
-			self.y_val=self.y_val.reshape(len(self.y_val),1)
+			#y=y.reshape(self.Np,1)
 			w=np.random.rand(self.Nf,1)
 			I = np.eye(self.Nf)
 
@@ -252,7 +258,7 @@ class SolveRidge(SolveMinProbl):
 		plt.plot(self.lambda_range,self.errval)
 		#ax=plt.gca()
 		#ax.ticklabel_format(scilimits=None)
-		plt.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
+		#plt.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
 		plt.xlabel(r'$\lambda$')
 		plt.ylabel('Mean Square Error')
 		plt.title('Ridge')
@@ -290,12 +296,12 @@ if __name__ == '__main__':
 	data_val = data[math.floor(data.shape[0]/2):math.floor(3/4*data.shape[0])]
 	data_test = data[math.floor(3/4*data.shape[0]):data.shape[0]]
 
-	data_train.info()
-	print("\n")
-	data_val.info()
-	print("\n")
-	data_test.info()
-	print("\n")
+	#data_train.info()
+	#print("\n")
+	#data_val.info()
+	#print("\n")
+	#data_test.info()
+	#print("\n")
 
 	#data normalization
 
@@ -344,10 +350,10 @@ if __name__ == '__main__':
 
 
 
-	print("- - -\n\n")
+	#print("- - -\n\n")
 	#print(data_train_norm.min())
 	#print(data_train_norm.max())
-	print("\n\n - - -")
+	#print("\n\n - - -")
 
 	#hist = data_train.hist(bins=100)
 	#plt.show()
@@ -364,7 +370,7 @@ if __name__ == '__main__':
 	
 	#lls=SolveLLS(y_train.values,X_train.values)
 	gd=SolveGrad(y_train.values,X_train.values,X_val.values,y_val.values)
-	#cgd=SolveConjugateGradient(y_train.values,X_train.values)
+	#cgd=SolveConjugateGradient(y_train.values,X_train.values,X_val.values,y_val.values)
 	#sgd=SolveStochasticGradient(y_train.values,X_train.values)
 	#sd=SolveSteepestDescent(y_train.values,X_train.values)
 	ridge=SolveRidge(y_train.values,X_train.values,X_val.values,y_val.values)
@@ -376,9 +382,11 @@ if __name__ == '__main__':
 
 	gd.run()
 	gd.plot_w('Gradient descent')
-	#gd.print_result('GD')
+	gd.print_result('GD')
 	gd.plot_err('GD')
-	#gd.graphics()
+	gd.graphics()
+
+
 	#cgd.run()
 	#cgd.plot_w('Conjugate gradient descent')
 	#cgd.plot_err('Conjugate Gradient')
@@ -394,9 +402,9 @@ if __name__ == '__main__':
 	#lls.plot_w("LLS")
 	#gd.plot_w('Gradient Descent')
 	#gd.plot_err('Gradient Descent')
-	ridge.run()
-	ridge.plot_w('Ridge regression')
-	ridge.plotRidgeError()
+	#ridge.run()
+	#ridge.plot_w('Ridge regression')
+	#ridge.plotRidgeError()
 	#ridge.graphics()
 
 	#cgd.plot_w('Conjugate Gradient Descent')
