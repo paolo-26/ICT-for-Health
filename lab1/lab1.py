@@ -16,7 +16,7 @@ np.random.seed(42)
 
 class SolveMinProbl(object):
 
-    def __init__(self, y, A, yval, Xval, mean, std):
+    def __init__(self, y, A, yval, Xval, Xtest, mean, std):
         self.matr = A
         self.Np = y.shape[0]  # Number of patients
         self.Nf = A.shape[1]  # Number of features
@@ -24,6 +24,7 @@ class SolveMinProbl(object):
         self.sol = np.zeros((self.Nf, 1), dtype=float)
         self.y_val = yval.reshape(len(yval), 1)  # Vector with validation data
         self.X_val = Xval  # Matrix with validation data
+        self.X_test = Xtest
         self.err = []  # Mean square error for each iteration
         self.errval = []  # Mean square error for each iteration on validation set
         self.m = mean
@@ -36,9 +37,10 @@ class SolveMinProbl(object):
         plt.stem(n,w.reshape(len(w),))
         plt.ylabel('$w(n)$')
         plt.xticks(ticks=range(self.Nf), labels=[r'UPDRS$_{\mathrm{Motor}}$',
-            r'UPDRS$_{\mathrm{Total}}$',r'Jitter$_{(\%)}$',
+            r'Jitter$_{(\%)}$',
             r'Jitter$_{\mathrm{(Abs)}}$',r'Jitter$_{\mathrm{RAP}}$',
             r'Jitter$_{\mathrm{PPQ5}}$',r'Jitter$_{\mathrm{DDP}}$',
+            r'Shimmer',
             r'Shimmer$_{\mathrm{(dB)}}$',r'Shimmer$_{\mathrm{APQ3}}$',
             r'Shimmer$_{\mathrm{APQ5}}$',r'Shimmer$_{\mathrm{APQ11}}$',
             r'Shimmer$_{\mathrm{DDA}}$','NHR','HNR','RPDE','DFA','PPE'],
@@ -90,30 +92,35 @@ class SolveMinProbl(object):
         plt.legend(['Training set','Validation set'])
         plt.show()
 
-    def graphics(self):
-        plt.figure()
+    def graphics(self,title):
+        
         vect = self.vect.reshape(len(self.vect),)*self.s + self.m  # de-standardize
         yhat = self.yhat.reshape(len(self.yhat),)*self.s + self.m  # de-standardize
+        yhat_test =  self.yhat_test.reshape(len(self.yhat_test),)*self.s + self.m  
 
         # Histogram
+        plt.figure()
         plt.hist(vect-yhat, bins=50)
         plt.title(r'$y_{\mathrm{train}} - \hat{y}_{\mathrm{train}}$')
         plt.xlabel('Error')
         plt.ylabel('Number of entries')
         plt.grid()
-        plt.show()
+        plt.title(title)
+        #plt.show()
 
         #  Scatter plot
         plt.figure()
+        #plt.scatter(yhat, vect)
         plt.scatter(yhat, vect, marker="2")
-        plt.title(r'$\hat{y}_{\mathrm{train}}$ vs $y_{\mathrm{train}}$')
+        plt.title(title+': '+r'$\hat{y}_{\mathrm{train}}$ vs $y_{\mathrm{train}}$')
         plt.grid()
         plt.xlabel(r'$y_{\mathrm{train}}$')
         plt.ylabel(r'$\hat{y}_{\mathrm{train}}$')
         plt.axis('equal')
         lined = [min(yhat), max(yhat)]
         plt.plot(lined, lined, color='tab:orange')  # Diagonal line
-        plt.show()
+        #plt.show()
+        plt.savefig("scatter_"+title+".pdf")
 
 
 class SolveLLS(SolveMinProbl):
@@ -121,14 +128,15 @@ class SolveLLS(SolveMinProbl):
     def run(self):
         A = self.matr
         y = self.vect
-        w = np.dot(np.dot(np.linalg.inv(np.dot(A.T,A)),A.T),y)**2
+        w = np.dot(np.dot(np.linalg.inv(np.dot(A.T,A)),A.T),y)
         self.sol = w
-        self.min = np.linalg.norm(np.dot(A,w)-y)
+        self.min = np.linalg.norm(np.dot(A,w)-y)**2
         self.yhat = np.dot(A,self.sol).reshape(len(y),)
+        self.yhat_test = np.dot(self.X_test,self.sol)
 
 class SolveGrad(SolveMinProbl):
 
-    def run(self, gamma=1e-5, Nit=1000, eps=1e-3):
+    def run(self, gamma=1e-5, Nit=2500, eps=1e-3):
         A = self.matr
         y = self.vect
         w = np.random.rand(self.Nf,1)
@@ -139,11 +147,11 @@ class SolveGrad(SolveMinProbl):
 
             if np.linalg.norm(w2-w) < eps:
                 w = copy.deepcopy(w2)
-                print("Gradient descent has stopped after %d iterations, ERR = %4f" %(it,self.err[-1]))
+                print("Gradient descent has stopped after %d iterations, MSE = %4f" %(it,self.err[-1]))
                 break
 
             w=copy.deepcopy(w2)
-            self.err.append(np.linalg.norm(np.dot(A,w)-y)**2/self.Np)
+            self.err.append((np.linalg.norm(np.dot(A,w)-y)**2)/self.Np)
             self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
             #if (gamma*(np.linalg.norm(grad))<eps):
             #   print("Conjugate gradient stopped after %d iterations, ERR = %4f" %(it,self.err[-1]))
@@ -152,11 +160,12 @@ class SolveGrad(SolveMinProbl):
         self.sol = w
         self.min = self.err[-1]
         self.yhat = np.dot(A,self.sol).reshape(len(y),)
+        self.yhat_test = np.dot(self.X_test,self.sol)
 
 
 class SolveStochasticGradient(SolveMinProbl):
 
-    def run(self, Nit=6000, gamma=1e-5, eps=1e-5):
+    def run(self, Nit=2500, gamma=1e-5, eps=1e-3):
         A = self.matr
         y = self.vect
         w = np.random.rand(self.Nf,1)
@@ -169,18 +178,18 @@ class SolveStochasticGradient(SolveMinProbl):
                 w = w - gamma*grad_i
 
             if np.linalg.norm(w2-w) < eps:
-                print("Stochastic gradient descent has stopped after %d iterations, ERR = %4f" %(it,self.err[-1]))
+                print("Stochastic gradient descent has stopped after %d iterations, MSE = %4f" %(it,self.err[-1]))
                 break
 
-            self.err.append(np.linalg.norm(np.dot(A,w)-y) ** 2)
+            self.err.append(np.linalg.norm(np.dot(A,w)-y)**2/self.Np)
             #if (gamma*(np.linalg.norm(grad_i))<eps):
             #   print("Stochastic gradient stopped after %d iterations, ERR = %4f" %(it,self.err[-1]))
             #   break
 
         self.sol = w
-        print(w)
         self.min = self.err[-1]
         self.yhat = np.dot(A,self.sol).reshape(len(y),)
+        self.yhat_test = np.dot(self.X_test,self.sol)
 
 
 class SolveConjugateGradient(SolveMinProbl):
@@ -207,11 +216,12 @@ class SolveConjugateGradient(SolveMinProbl):
         self.sol = w
         self.min = self.err[-1]
         self.yhat = np.dot(A,self.sol).reshape(len(y),)
+        self.yhat_test = np.dot(self.X_test,self.sol)
 
 
 class SolveSteepestDescent(SolveMinProbl):
 
-    def run(self, Nit=6000, eps=1e-3):
+    def run(self, Nit=2500, eps=1e-3):
         A = self.matr
         y = self.vect
         w = np.random.rand(self.Nf,1)
@@ -223,7 +233,7 @@ class SolveSteepestDescent(SolveMinProbl):
 
             if np.linalg.norm(w2-w) < eps:
                 w=copy.deepcopy(w2)
-                print("Steepest descent has stopped after %d iterations, ERR = %4f" %(it,self.err[-1]))
+                print("Steepest descent has stopped after %d iterations, MSE = %4f" %(it,self.err[-1]))
                 break
 
             w = copy.deepcopy(w2)
@@ -233,6 +243,7 @@ class SolveSteepestDescent(SolveMinProbl):
         self.sol = w
         self.min = self.err[-1]
         self.yhat = np.dot(A,self.sol).reshape(len(y),)
+        self.yhat_test = np.dot(self.X_test,self.sol)
 
 
 class SolveRidge(SolveMinProbl):
@@ -245,7 +256,7 @@ class SolveRidge(SolveMinProbl):
             y = self.vect
             w=np.random.rand(self.Nf,1)
             I = np.eye(self.Nf)
-            w = np.dot(np.dot(np.linalg.pinv((np.dot(A.T,A) + L*I)),A.T),y)
+            w = np.dot(np.dot(np.linalg.inv((np.dot(A.T,A) + L*I)),A.T),y)
             self.err.append(float(np.linalg.norm(np.dot(A,w)-y))**2/self.Np)
             self.errval.append(float(np.linalg.norm(np.dot(self.X_val,w)-self.y_val))**2/len(self.y_val))
             self.min=min(self.err)
@@ -253,6 +264,7 @@ class SolveRidge(SolveMinProbl):
             if self.err[-1] <= self.min:
                 self.sol = w
                 self.yhat = np.dot(A,self.sol).reshape(len(y),)
+                self.yhat_test = np.dot(self.X_test,self.sol)
         
     def plotRidgeError(self):  # Plot ridge regression error vs lambda values
         plt.figure()
@@ -265,18 +277,6 @@ class SolveRidge(SolveMinProbl):
         plt.show()
         plt.legend(['Training set','Validation set'])
 
-'''
-def standardizeData(dataset):
-    new_dataset = copy.deepcopy(dataset)
-
-    for i in range(dataset.shape[1]):
-        mean = np.mean(new_dataset.iloc[:,i])
-        new_dataset.iloc[:,i] = new_dataset.iloc[:,i] - mean   
-        std = np.std(new_dataset.iloc[:,i])
-        new_dataset.iloc[:,i] = new_dataset.iloc[:,i] / std
-        print("mean(",i,") = ", np.mean(dataset.iloc[:,i]))
-        print("var = ",  np.var(dataset.iloc[:,i]),"\n")
-'''
 
 if __name__ == '__main__':
 
@@ -294,7 +294,7 @@ if __name__ == '__main__':
     data_train_norm = copy.deepcopy(data_train)  # To preserve original data
     data_val_norm = copy.deepcopy(data_val)  # To preserve original data
     data_test_norm = copy.deepcopy(data_test)  # To preserve original data
-
+    
     for i in range(data_train.shape[1]):
         mean = np.mean(data_train.iloc[:,i])  # Calculate mean for data_train
         data_train_norm.iloc[:,i] -= mean
@@ -304,60 +304,62 @@ if __name__ == '__main__':
         data_train_norm.iloc[:,i] /=  std
         data_val_norm.iloc[:,i] /= std
         data_test_norm.iloc[:,i] /= std
+
+    # Mean and standard deviation in order to de-standardize data for the plots
+    m = np.mean(data_train.iloc[:,F0])
+    s = np.std(data_train.iloc[:,F0])
     
     y_train = data_train_norm.iloc[:,F0] # F0 column vector
     y_test = data_test_norm.iloc[:,F0] # F0 column vector
     y_val = data_val_norm.iloc[:,F0] # F0 column vector
-    X_train = data_train_norm.drop(columns='Shimmer') # Remove column F0
-    X_test = data_test_norm.drop(columns='Shimmer') # Remove column F0
-    X_val = data_val_norm.drop(columns='Shimmer') # Remove column F0
+    X_train = data_train_norm.drop(columns='total_UPDRS') # Remove column F0
+    X_test = data_test_norm.drop(columns='total_UPDRS') # Remove column F0
+    X_val = data_val_norm.drop(columns='total_UPDRS') # Remove column F0
     
-    # Mean and standard deviation in order to de-standardize data for the plots
-    m = np.mean(data_train.iloc[:,F0])
-    s = np.std(data_train.iloc[:,F0])
-
     # Class initializations
-    lls=SolveLLS(y_train.values,X_train.values,y_val.values,X_val.values,m,s)
-    gd=SolveGrad(y_train.values,X_train.values,y_val.values,X_val.values,m,s)
-    cgd=SolveConjugateGradient(y_train.values,X_train.values,y_val.values,X_val.values,m,s)
-    sgd=SolveStochasticGradient(y_train.values,X_train.values,y_val.values,X_val.values,m,s)
-    sd=SolveSteepestDescent(y_train.values,X_train.values,y_val.values,X_val.values,m,s)
-    ridge=SolveRidge(y_train.values,X_train.values,y_val.values,X_val.values,m,s)
+    lls=SolveLLS(y_train.values,X_train.values,y_val.values,X_val.values,X_test.values,m,s)
+    gd=SolveGrad(y_train.values,X_train.values,y_val.values,X_val.values,X_test.values,m,s)
+    cgd=SolveConjugateGradient(y_train.values,X_train.values,y_val.values,X_val.values,X_test.values,m,s)
+    sgd=SolveStochasticGradient(y_train.values,X_train.values,y_val.values,X_val.values,X_test.values,m,s)
+    sd=SolveSteepestDescent(y_train.values,X_train.values,y_val.values,X_val.values,X_test.values,m,s)
+    ridge=SolveRidge(y_train.values,X_train.values,y_val.values,X_val.values,X_test.values,m,s)
     
     # LLS
     lls.run()
-    lls.plot_w('LLS')
+    #lls.plot_w('LLS')
+    #lls.print_result('LLS')
+    lls.graphics('LLS')
 
     # Gradient descent
     gd.run()
-    gd.plot_w('Gradient descent')
+    #gd.plot_w('Gradient descent')
     #gd.print_result('GD')
-    gd.plot_err('GD')
-    gd.graphics()
+    #gd.plot_err('GD')
+    gd.graphics('Gradient descent')
 
     # Conjugate gradient descent
-    #cgd.run()
+    cgd.run()
     #cgd.plot_w('Conjugate gradient descent')
     #cgd.plot_err('Conjugate gradient descent')
-    #cgd.graphics()
+    cgd.graphics('Conjugate gradient')
 
     # Stochastic gradient descent
-    #sgd.run()
+    sgd.run()
     #sgd.plot_w('SGD')
     #sgd.plot_err('SGD')
-    #sgd.graphics()
+    sgd.graphics('Stochastic gradient descent')
 
     # Steepest descent
     sd.run()
-    sd.plot_w('Steepest descent')
-    sd.plot_err('Steepest descent')
-    sd.graphics()
+    #sd.plot_w('Steepest descent')
+    #sd.plot_err('Steepest descent')
+    sd.graphics('Steepest descent')
 
     # Ridge regression
-    #ridge.run()
+    ridge.run()
     #ridge.plot_w('Ridge regression')
     #ridge.plotRidgeError()
-    #ridge.graphics()
+    ridge.graphics('Ridge regression')
 
-    #plt.show()
+    plt.show()
     print("--- END ---")
