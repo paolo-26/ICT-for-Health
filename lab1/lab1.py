@@ -16,11 +16,18 @@ matplotlib.rc('text', usetex = True)  # For LaTeX text in matplotlib plots
 
 class SolveMinProbl(object):
     """It is the main class from which all the algorithms class are made.
-    y : vector 
-    A : matrix
-    yval : 
-    Xval :
-    Xtest : float m
+    
+    Parameters
+    ----------
+    y : vector of floats
+        column vector of feature F0
+    A : matrix Np*Nf of floats
+        matrix containing all features except F0
+    yval : vector of floats
+        y vector used for validation
+    Xval : matrix of float
+        X matrix used for validation
+    Xtest : vector of float used for test
     mean : float
         Mean value used to de-standardize the data for the plots.
     std : 
@@ -42,7 +49,7 @@ class SolveMinProbl(object):
         self.s = std
 
     def plot_w(self, title):
-        """It plots the w vector with stem and with the feature labes on xaxis.
+        """It plots the w vector with stem and feature names on xlabel.
         """
         w = self.sol
         n = np.arange(self.Nf)
@@ -62,10 +69,12 @@ class SolveMinProbl(object):
         plt.grid(which='both')
         #plt.show()
         #plt.ylim([-0.5,0.5])
-        plt.subplots_adjust(bottom=0.25)  # margin for labels
+        plt.subplots_adjust(bottom=0.25)  # Margin for labels
         #plt.savefig("w"+title+".pdf")
 
     def print_result(self, title):
+        """It prints the w vector on screen.
+        """
         print('%s:' %title)
         print('The optimum weight vector is:')
         print(self.sol,"\n")
@@ -122,6 +131,7 @@ class SolveMinProbl(object):
         Histogram: y-yhat
         Scatter: yhat vs y
         """
+        # Reshape vectors for correct plotting.
         vect = self.vect.reshape(len(self.vect),)*self.s + self.m  # de-standardize
         yhat = self.yhat.reshape(len(self.yhat),)*self.s + self.m  # de-standardize
         yhat_test =  self.yhat_test.reshape(len(self.yhat_test),)*self.s + self.m  
@@ -275,11 +285,9 @@ class SolveSteepestDescent(SolveMinProbl):
 
 
 class SolveRidge(SolveMinProbl):
-
+    """It computes ridge regression for many values of lambda.
+    """
     def run(self, Lambda=range(0,200)):
-        """
-
-        """
         self.lambda_range = Lambda
 
         for L in Lambda:
