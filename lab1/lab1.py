@@ -11,10 +11,21 @@ import math
 import copy
 
 np.random.seed(42)
-#matplotlib.rc('text', usetex = True)  # For LaTeX text in matplotlib plots
+matplotlib.rc('text', usetex = True)  # For LaTeX text in matplotlib plots
 
 
 class SolveMinProbl(object):
+    """It is the main class from which all the algorithms class are made.
+    y : vector 
+    A : matrix
+    yval : 
+    Xval :
+    Xtest : float m
+    mean : float
+        Mean value used to de-standardize the data for the plots.
+    std : 
+        Standard deviation used to de-standardize the data for the plots.
+    """
 
     def __init__(self, y, A, yval, Xval, Xtest, mean, std):
         self.matr = A
@@ -31,6 +42,8 @@ class SolveMinProbl(object):
         self.s = std
 
     def plot_w(self, title):
+        """It plots the w vector with stem and with the feature labes on xaxis.
+        """
         w = self.sol
         n = np.arange(self.Nf)
         plt.figure()
@@ -58,6 +71,16 @@ class SolveMinProbl(object):
         print(self.sol,"\n")
 
     def plot_err(self, title='Algorithm', logy=1, logx=0):
+        """It plots the MSE in different log scales.
+        Default: semilogy
+
+        Parameters
+        ----------
+        logy : boolean
+            It modifies the y axis scale into logarithmic
+        logx : boolean
+            It modifies the x axis scale into logarithmic
+        """
         err = self.err
         errval = self.errval
         plt.figure()
@@ -93,12 +116,17 @@ class SolveMinProbl(object):
         plt.show()
 
     def graphics(self,title):
-        
+        """
+        It de-standardize the data with original std and mean values.
+        It plots the histogram and scatter plot graphics.
+        Histogram: y-yhat
+        Scatter: yhat vs y
+        """
         vect = self.vect.reshape(len(self.vect),)*self.s + self.m  # de-standardize
         yhat = self.yhat.reshape(len(self.yhat),)*self.s + self.m  # de-standardize
         yhat_test =  self.yhat_test.reshape(len(self.yhat_test),)*self.s + self.m  
 
-        # Histogram
+        # Histogram.
         plt.figure()
         plt.hist(vect-yhat, bins=50)
         plt.title(r'$y_{\mathrm{train}} - \hat{y}_{\mathrm{train}}$')
@@ -108,7 +136,7 @@ class SolveMinProbl(object):
         plt.title(title)
         #plt.show()
 
-        #  Scatter plot
+        #  Scatter plot.
         plt.figure()
         #plt.scatter(yhat, vect)
         plt.scatter(yhat, vect, marker="2")
@@ -249,6 +277,9 @@ class SolveSteepestDescent(SolveMinProbl):
 class SolveRidge(SolveMinProbl):
 
     def run(self, Lambda=range(0,200)):
+        """
+
+        """
         self.lambda_range = Lambda
 
         for L in Lambda:
@@ -266,7 +297,12 @@ class SolveRidge(SolveMinProbl):
                 self.yhat = np.dot(A,self.sol).reshape(len(y),)
                 self.yhat_test = np.dot(self.X_test,self.sol)
         
-    def plotRidgeError(self):  # Plot ridge regression error vs lambda values
+    def plotRidgeError(self):  
+    """
+    Plot ridge regression mean square error vs lambda values. 
+    It takes all parameters from the main class except from lambda_range that
+    is taken from the subclass SolveRidge.
+    """
         plt.figure()
         plt.plot(self.lambda_range,self.err,color='tab:blue')
         plt.plot(self.lambda_range,self.errval,color='tab:gray',linestyle=':')
@@ -283,14 +319,14 @@ if __name__ == '__main__':
     F0 = 1  # Shimmer column
     data = pd.read_csv("parkinsons_updrs.csv") # Import CSV into a dataframe
     data = data.drop(columns=['subject#','age','sex','test_time']) # Drop the first columns
-    #data=data.sample(frac=1).reset_index(drop=True) # Shuffle rows and reset index 
+    data=data.sample(frac=1).reset_index(drop=True) # Shuffle rows and reset index 
 
-    # Submatrices: training, validation and test
+    # Submatrices: training, validation and test.
     data_train = data[0:math.ceil(data.shape[0]/2)-1]
     data_val = data[math.floor(data.shape[0]/2):math.floor(3/4*data.shape[0])]
     data_test = data[math.floor(3/4*data.shape[0]):data.shape[0]]
 
-    # Data normalization
+    # Data normalization.
     data_train_norm = copy.deepcopy(data_train)  # To preserve original data
     data_val_norm = copy.deepcopy(data_val)  # To preserve original data
     data_test_norm = copy.deepcopy(data_test)  # To preserve original data
@@ -305,7 +341,7 @@ if __name__ == '__main__':
         data_val_norm.iloc[:,i] /= std
         data_test_norm.iloc[:,i] /= std
 
-    # Mean and standard deviation in order to de-standardize data for the plots
+    # Mean and standard deviation in order to de-standardize data for the plots.
     m = np.mean(data_train.iloc[:,F0])
     s = np.std(data_train.iloc[:,F0])
     
@@ -316,7 +352,7 @@ if __name__ == '__main__':
     X_test = data_test_norm.drop(columns='total_UPDRS') # Remove column F0
     X_val = data_val_norm.drop(columns='total_UPDRS') # Remove column F0
     
-    # Class initializations
+    # Class initializations.
     lls=SolveLLS(y_train.values,X_train.values,y_val.values,X_val.values,X_test.values,m,s)
     gd=SolveGrad(y_train.values,X_train.values,y_val.values,X_val.values,X_test.values,m,s)
     cgd=SolveConjugateGradient(y_train.values,X_train.values,y_val.values,X_val.values,X_test.values,m,s)
@@ -324,42 +360,42 @@ if __name__ == '__main__':
     sd=SolveSteepestDescent(y_train.values,X_train.values,y_val.values,X_val.values,X_test.values,m,s)
     ridge=SolveRidge(y_train.values,X_train.values,y_val.values,X_val.values,X_test.values,m,s)
     
-    # LLS
+    # Linear least squares
     lls.run()
-    #lls.plot_w('LLS')
+    lls.plot_w('LLS')
     #lls.print_result('LLS')
-    lls.graphics('LLS')
+    #lls.graphics('LLS')
 
     # Gradient descent
     gd.run()
-    #gd.plot_w('Gradient descent')
+    gd.plot_w('Gradient descent')
     #gd.print_result('GD')
     #gd.plot_err('GD')
-    gd.graphics('Gradient descent')
+    #gd.graphics('Gradient descent')
 
     # Conjugate gradient descent
     cgd.run()
-    #cgd.plot_w('Conjugate gradient descent')
+    cgd.plot_w('Conjugate gradient descent')
     #cgd.plot_err('Conjugate gradient descent')
-    cgd.graphics('Conjugate gradient')
+    #cgd.graphics('Conjugate gradient')
 
     # Stochastic gradient descent
     sgd.run()
-    #sgd.plot_w('SGD')
+    sgd.plot_w('SGD')
     #sgd.plot_err('SGD')
-    sgd.graphics('Stochastic gradient descent')
+    #sgd.graphics('Stochastic gradient descent')
 
     # Steepest descent
     sd.run()
-    #sd.plot_w('Steepest descent')
+    sd.plot_w('Steepest descent')
     #sd.plot_err('Steepest descent')
-    sd.graphics('Steepest descent')
+    #sd.graphics('Steepest descent')
 
     # Ridge regression
     ridge.run()
-    #ridge.plot_w('Ridge regression')
+    ridge.plot_w('Ridge regression')
     #ridge.plotRidgeError()
-    ridge.graphics('Ridge regression')
+    #ridge.graphics('Ridge regression')
 
     plt.show()
     print("--- END ---")
