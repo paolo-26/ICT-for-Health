@@ -120,8 +120,8 @@ class SolveMinProbl(object):
             plt.semilogy(errval, color='tab:red', linestyle=':')
 
         plt.xlabel('$n$')
-        plt.ylabel('$e(n)$')
-        plt.title(title+': mean square error')
+        plt.ylabel('$MSE(n)$')
+        plt.title(title+': mean squared error')
         #plt.margins(0.01,0.1)
         plt.minorticks_on()
         plt.grid(b=True, which='minor', color='xkcd:lilac', linestyle=':')
@@ -146,7 +146,7 @@ class SolveMinProbl(object):
         # Histogram.
         plt.figure()
         plt.hist(ytrain-yhat_train, bins=50)
-        plt.title(r'$y_{\mathrm{train}} - \hat{y}_{\mathrm{train}}$')
+        plt.title(r'$\mathrm{y}_{\mathrm{train}} - \hat{\mathrm{y}}_{\mathrm{train}}$')
         plt.xlabel('Error')
         plt.ylabel('Number of entries')
         plt.grid()
@@ -159,7 +159,7 @@ class SolveMinProbl(object):
         # Histogram.
         plt.figure()
         plt.hist(ytest-yhat_test, bins=50, color='tab:orange')
-        plt.title(r'$y_{\mathrm{test}} - \hat{y}_{\mathrm{test}}$')
+        plt.title(r'$\mathrm{y}_{\mathrm{test}} - \hat{\mathrm{y}}_{\mathrm{test}}$')
         plt.xlabel('Error')
         plt.ylabel('Number of entries')
         plt.grid()
@@ -172,10 +172,10 @@ class SolveMinProbl(object):
         #  Scatter plot.
         plt.figure()
         plt.scatter(yhat_train, ytrain, marker="2")
-        plt.title(title+': '+r'$\hat{y}_{\mathrm{train}}$ vs $y_{\mathrm{train}}$')
+        plt.title(title+': '+r'$\hat{\mathrm{y}}_{\mathrm{train}}$ vs $y_{\mathrm{train}}$')
         plt.grid()
-        plt.xlabel(r'$y_{\mathrm{train}}$')
-        plt.ylabel(r'$\hat{y}_{\mathrm{train}}$')
+        plt.xlabel(r'$\mathrm{y}{\mathrm{train}}$')
+        plt.ylabel(r'$\hat{\mathrm{y}}_{\mathrm{train}}$')
         plt.axis('equal')
         lined = [min(yhat_train), max(yhat_train)]
         plt.plot(lined, lined, color='tab:orange')  # Diagonal line
@@ -186,10 +186,10 @@ class SolveMinProbl(object):
         #  Scatter plot.
         plt.figure()
         plt.scatter(yhat_test, ytest, marker="2", color='tab:orange')
-        plt.title(title+': '+r'$\hat{y}_{\mathrm{test}}$ vs $y_{\mathrm{test}}$')
+        plt.title(title+': '+r'$\hat{\mathrm{y}}_{\mathrm{test}}$ vs $y_{\mathrm{test}}$')
         plt.grid()
-        plt.xlabel(r'$y_{\mathrm{test}}$')
-        plt.ylabel(r'$\hat{y}_{\mathrm{test}}$')
+        plt.xlabel(r'$\mathrm{y}_{\mathrm{test}}$')
+        plt.ylabel(r'$\hat{\mathrm{y}}_{\mathrm{test}}$')
         plt.axis('equal')
         lined = [min(yhat_train), max(yhat_train)]
         plt.plot(lined, lined, color='tab:red')  # Diagonal line
@@ -214,7 +214,7 @@ class SolveLLS(SolveMinProbl):
 
 class SolveGrad(SolveMinProbl):
 
-    def run(self, gamma=1e-5, Nit=2500, eps=1e-3):
+    def run(self, gamma=1e-5, Nit=7500, eps=1e-3):
         A = self.X_train
         y = self.y_train
         w = np.random.rand(self.Nf,1)
@@ -240,7 +240,8 @@ class SolveGrad(SolveMinProbl):
         self.min = self.err[-1]
         self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
         self.yhat_test = np.dot(self.X_test,self.sol)
-        print('Gradient descent:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f\n' %(self.err[-1],self.errtest[-1],self.errval[-1]))      
+        print('Gradient descent:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f' %(self.err[-1],self.errtest[-1],self.errval[-1]))   
+        print('\tIterations = %d\n' %it)        
 
 
 class SolveStochasticGradient(SolveMinProbl):
@@ -272,7 +273,8 @@ class SolveStochasticGradient(SolveMinProbl):
         self.min = self.err[-1]
         self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
         self.yhat_test = np.dot(self.X_test,self.sol)
-        print('Stochastic gradient descent:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f\n' %(self.err[-1],self.errtest[-1],self.errval[-1]))      
+        print('Stochastic gradient descent:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f' %(self.err[-1],self.errtest[-1],self.errval[-1])) 
+        print('\tIterations = %d\n' %it)          
 
 class SolveConjugateGradient(SolveMinProbl):
 
@@ -300,7 +302,8 @@ class SolveConjugateGradient(SolveMinProbl):
         self.min = self.err[-1]
         self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
         self.yhat_test = np.dot(self.X_test,self.sol)
-        print('Conjugate gradient method:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f\n' %(self.err[-1],self.errtest[-1],self.errval[-1]))      
+        print('Conjugate gradient method:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f' %(self.err[-1],self.errtest[-1],self.errval[-1]))      
+        print('\tIterations = %d\n' %(it+1))     
 
 class SolveSteepestDescent(SolveMinProbl):
 
@@ -328,7 +331,8 @@ class SolveSteepestDescent(SolveMinProbl):
         self.min = self.err[-1]
         self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
         self.yhat_test = np.dot(self.X_test,self.sol)
-        print('Steepest descent:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f\n' %(self.err[-1],self.errtest[-1],self.errval[-1]))      
+        print('Steepest descent:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f' %(self.err[-1],self.errtest[-1],self.errval[-1])) 
+        print('\tIterations = %d\n' %it)     
 
 class SolveRidge(SolveMinProbl):
     """It computes ridge regression for many values of lambda.
@@ -365,10 +369,11 @@ class SolveRidge(SolveMinProbl):
         plt.plot(self.lambda_range,self.err,color='tab:blue')
         plt.plot(self.lambda_range,self.errval,color='tab:gray',linestyle=':')
         plt.xlabel(r'$\lambda$')
-        plt.ylabel('Mean Square Error')
+        plt.ylabel('Mean squared error')
         plt.title('Ridge regression: mean square error')
         plt.grid()
         plt.legend(['Training set','Validation set'])
+        plt.savefig("err_Ridge_lambda.pdf")
         #plt.show()
 
 
