@@ -49,6 +49,7 @@ class SolveMinProbl(object):
 
         self.err = []  # Mean square error for each iteration
         self.errval = []  # Mean square error for each iteration on validation set
+        self.errtest = [] # Mean square error for each iteration on test set
         self.m = mean
         self.s = std
 
@@ -74,7 +75,7 @@ class SolveMinProbl(object):
         #plt.show()
         #plt.ylim([-0.5,0.5])
         plt.subplots_adjust(bottom=0.25)  # Margin for labels
-        #plt.savefig("w"+title+".pdf")
+        plt.savefig("w_"+title.replace(" ", "_")+".pdf")
 
     def print_result(self, title):
         """It prints the w vector on screen.
@@ -126,6 +127,7 @@ class SolveMinProbl(object):
         plt.grid(b=True, which='minor', color='xkcd:lilac', linestyle=':')
         plt.grid(b=True, which='major')
         plt.legend(['Training set','Validation set'])
+        plt.savefig("err_"+title.replace(" ", "_")+".pdf")
         #plt.show()
 
     def graphics(self,title):
@@ -148,10 +150,11 @@ class SolveMinProbl(object):
         plt.xlabel('Error')
         plt.ylabel('Number of entries')
         plt.grid()
-        plt.title(title+': Training')
+        plt.title(title+': Training set')
         plt.xlim([-16,16])
         plt.ylim([0,225])
         #plt.show()
+        plt.savefig("h_train_"+title.replace(" ", "_")+".pdf")
 
         # Histogram.
         plt.figure()
@@ -160,10 +163,11 @@ class SolveMinProbl(object):
         plt.xlabel('Error')
         plt.ylabel('Number of entries')
         plt.grid()
-        plt.title(title+': Test')
+        plt.title(title+': Test set')
         plt.xlim([-16,16])
         plt.ylim([0,225])
         #plt.show()
+        plt.savefig("h_test_"+title.replace(" ", "_")+".pdf")
 
         #  Scatter plot.
         plt.figure()
@@ -175,23 +179,23 @@ class SolveMinProbl(object):
         plt.axis('equal')
         lined = [min(yhat_train), max(yhat_train)]
         plt.plot(lined, lined, color='tab:orange')  # Diagonal line
-        plt.title(title+': Training')
+        plt.title(title+': Training set')
         #plt.show()
-        #plt.savefig("scatter_"+title+".pdf")
+        plt.savefig("s_train_"+title.replace(" ", "_")+".pdf")
 
         #  Scatter plot.
         plt.figure()
-        plt.scatter(yhat_test, ytest, marker="2")
+        plt.scatter(yhat_test, ytest, marker="2", color='tab:orange')
         plt.title(title+': '+r'$\hat{y}_{\mathrm{test}}$ vs $y_{\mathrm{test}}$')
         plt.grid()
         plt.xlabel(r'$y_{\mathrm{test}}$')
         plt.ylabel(r'$\hat{y}_{\mathrm{test}}$')
         plt.axis('equal')
         lined = [min(yhat_train), max(yhat_train)]
-        plt.plot(lined, lined, color='tab:orange')  # Diagonal line
-        plt.title(title+': Test')
+        plt.plot(lined, lined, color='tab:red')  # Diagonal line
+        plt.title(title+': Test set')
         #plt.show()
-        #plt.savefig("scatter_"+title+".pdf")
+        plt.savefig("s_test_"+title.replace(" ", "_")+".pdf")
 
 class SolveLLS(SolveMinProbl):
 
@@ -203,6 +207,10 @@ class SolveLLS(SolveMinProbl):
         self.min = np.linalg.norm(np.dot(A, w)-y)**2
         self.yhat_train = np.dot(A, self.sol).reshape(len(y),)
         self.yhat_test = np.dot(self.X_test, self.sol)
+        self.err.append((np.linalg.norm(np.dot(A,w)-y)**2)/self.Np)
+        self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
+        self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
+        print('Linear least squares:\n\ttrain_MSE = %.4f\n\ttest_MSE = %.4f\n\tval_MSE = %.4f\n' %(self.err[-1],self.errval[-1],self.errtest[-1]))
 
 class SolveGrad(SolveMinProbl):
 
@@ -217,12 +225,13 @@ class SolveGrad(SolveMinProbl):
 
             if np.linalg.norm(w2-w) < eps:
                 w = copy.deepcopy(w2)
-                print("Gradient descent has stopped after %d iterations, MSE = %4f" %(it,self.err[-1]))
+                #print("Gradient descent has stopped after %d iterations, MSE = %4f" %(it,self.err[-1]))
                 break
 
             w=copy.deepcopy(w2)
             self.err.append((np.linalg.norm(np.dot(A,w)-y)**2)/self.Np)
             self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
+            self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
             #if (gamma*(np.linalg.norm(grad))<eps):
             #   print("Conjugate gradient stopped after %d iterations, ERR = %4f" %(it,self.err[-1]))
             #   break
@@ -231,6 +240,7 @@ class SolveGrad(SolveMinProbl):
         self.min = self.err[-1]
         self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
         self.yhat_test = np.dot(self.X_test,self.sol)
+        print('Gradient descent:\n\ttrain_MSE = %.4f\n\ttest_MSE = %.4f\n\tval_MSE = %.4f\n' %(self.err[-1],self.errval[-1],self.errtest[-1]))
 
 
 class SolveStochasticGradient(SolveMinProbl):
@@ -248,11 +258,12 @@ class SolveStochasticGradient(SolveMinProbl):
                 w = w - gamma*grad_i
 
             if np.linalg.norm(w2-w) < eps:
-                print("Stochastic gradient descent has stopped after %d iterations, MSE = %4f" %(it,self.err[-1]))
+                #print("Stochastic gradient descent has stopped after %d iterations, MSE = %4f" %(it,self.err[-1]))
                 break
 
             self.err.append(np.linalg.norm(np.dot(A,w)-y)**2/self.Np)
             self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
+            self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
             #if (gamma*(np.linalg.norm(grad_i))<eps):
             #   print("Stochastic gradient stopped after %d iterations, ERR = %4f" %(it,self.err[-1]))
             #   break
@@ -261,7 +272,7 @@ class SolveStochasticGradient(SolveMinProbl):
         self.min = self.err[-1]
         self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
         self.yhat_test = np.dot(self.X_test,self.sol)
-
+        print('Stochastic gradient descent:\n\ttrain_MSE = %.4f\n\ttest_MSE = %.4f\n\tval_MSE = %.4f\n' %(self.err[-1],self.errval[-1],self.errtest[-1]))
 
 class SolveConjugateGradient(SolveMinProbl):
 
@@ -283,12 +294,13 @@ class SolveConjugateGradient(SolveMinProbl):
             d = -g + beta*d
             self.err.append(np.linalg.norm(np.dot(A,w)-y)**2/self.Np)
             self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
- 
+            self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
+
         self.sol = w
         self.min = self.err[-1]
         self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
         self.yhat_test = np.dot(self.X_test,self.sol)
-
+        print('Conjugate gradient method:\n\ttrain_MSE = %.4f\n\ttest_MSE = %.4f\n\tval_MSE = %.4f\n' %(self.err[-1],self.errval[-1],self.errtest[-1]))
 
 class SolveSteepestDescent(SolveMinProbl):
 
@@ -304,23 +316,24 @@ class SolveSteepestDescent(SolveMinProbl):
 
             if np.linalg.norm(w2-w) < eps:
                 w=copy.deepcopy(w2)
-                print("Steepest descent has stopped after %d iterations, MSE = %4f" %(it,self.err[-1]))
+                #print("Steepest descent has stopped after %d iterations, MSE = %4f" %(it,self.err[-1]))
                 break
 
             w = copy.deepcopy(w2)
             self.err.append(np.linalg.norm(np.dot(A,w)-y)**2/self.Np)
             self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
+            self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
 
         self.sol = w
         self.min = self.err[-1]
         self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
         self.yhat_test = np.dot(self.X_test,self.sol)
-
+        print('Steepest descent:\n\ttrain_MSE = %.4f\n\ttest_MSE = %.4f\n\tval_MSE = %.4f\n' %(self.err[-1],self.errval[-1],self.errtest[-1]))
 
 class SolveRidge(SolveMinProbl):
     """It computes ridge regression for many values of lambda.
     """
-    def run(self, Lambda=range(1,80)):
+    def run(self, Lambda=range(1,100)):
         self.lambda_range = Lambda
 
         for L in Lambda:
@@ -332,13 +345,16 @@ class SolveRidge(SolveMinProbl):
             self.err.append(float(np.linalg.norm(np.dot(A,w)-y))**2/self.Np)
             self.errval.append(float(np.linalg.norm(np.dot(self.X_val,w)-self.y_val))**2/len(self.y_val))
             self.min=min(self.err)
+            self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
 
             if self.err[-1] <= self.min:
                 self.sol = w
-                print("sol trovata, lambda=%d" % L)
+                #print("sol trovata, lambda=%d" % L)
                 self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
                 self.yhat_test = np.dot(self.X_test,self.sol)
-        
+                print('Ridge regression:\n\ttrain_MSE = %.4f\n\ttest_MSE = %.4f\n\tval_MSE = %.4f' %(self.err[-1],self.errval[-1],self.errtest[-1]))      
+       
+
     def plotRidgeError(self):  
         """
         Plot ridge regression mean square error vs lambda values. 
@@ -404,14 +420,12 @@ if __name__ == '__main__':
     
     # Linear least squares.
     lls.run()
-    lls.plot_w('Linear least squares')
-    #lls.print_result('Linear least squares')
+    #lls.plot_w('Linear least squares')
     #lls.graphics('Linear least squares')
 
     # Gradient descent.
     gd.run()
     #gd.plot_w('Gradient descent')
-    #gd.print_result('Gradient descent')
     #gd.plot_err('Gradient descent')
     #gd.graphics('Gradient descent')
 
@@ -437,7 +451,7 @@ if __name__ == '__main__':
     ridge.run()
     ridge.plot_w('Ridge regression')
     ridge.plotRidgeError()
-    #ridge.graphics('Ridge regression')
+    ridge.graphics('Ridge regression')
 
     plt.show()
     print("--- END ---")
