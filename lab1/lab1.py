@@ -12,7 +12,7 @@ import copy
 
 np.random.seed(2)
 matplotlib.rc('text', usetex = True)  # For LaTeX text in matplotlib plots
-
+plt.rcParams.update({'figure.max_open_warning': 0})
 
 class SolveMinProbl(object):
     """It is the main class from which all the algorithms class are made.
@@ -210,7 +210,7 @@ class SolveLLS(SolveMinProbl):
         self.err.append((np.linalg.norm(np.dot(A,w)-y)**2)/self.Np)
         self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
         self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
-        print('Linear least squares:\n\ttrain_MSE = %.4f\n\ttest_MSE = %.4f\n\tval_MSE = %.4f\n' %(self.err[-1],self.errval[-1],self.errtest[-1]))
+        print('Linear least squares:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f\n' %(self.err[-1],self.errtest[-1],self.errval[-1]))      
 
 class SolveGrad(SolveMinProbl):
 
@@ -240,7 +240,7 @@ class SolveGrad(SolveMinProbl):
         self.min = self.err[-1]
         self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
         self.yhat_test = np.dot(self.X_test,self.sol)
-        print('Gradient descent:\n\ttrain_MSE = %.4f\n\ttest_MSE = %.4f\n\tval_MSE = %.4f\n' %(self.err[-1],self.errval[-1],self.errtest[-1]))
+        print('Gradient descent:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f\n' %(self.err[-1],self.errtest[-1],self.errval[-1]))      
 
 
 class SolveStochasticGradient(SolveMinProbl):
@@ -272,7 +272,7 @@ class SolveStochasticGradient(SolveMinProbl):
         self.min = self.err[-1]
         self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
         self.yhat_test = np.dot(self.X_test,self.sol)
-        print('Stochastic gradient descent:\n\ttrain_MSE = %.4f\n\ttest_MSE = %.4f\n\tval_MSE = %.4f\n' %(self.err[-1],self.errval[-1],self.errtest[-1]))
+        print('Stochastic gradient descent:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f\n' %(self.err[-1],self.errtest[-1],self.errval[-1]))      
 
 class SolveConjugateGradient(SolveMinProbl):
 
@@ -300,7 +300,7 @@ class SolveConjugateGradient(SolveMinProbl):
         self.min = self.err[-1]
         self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
         self.yhat_test = np.dot(self.X_test,self.sol)
-        print('Conjugate gradient method:\n\ttrain_MSE = %.4f\n\ttest_MSE = %.4f\n\tval_MSE = %.4f\n' %(self.err[-1],self.errval[-1],self.errtest[-1]))
+        print('Conjugate gradient method:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f\n' %(self.err[-1],self.errtest[-1],self.errval[-1]))      
 
 class SolveSteepestDescent(SolveMinProbl):
 
@@ -328,7 +328,7 @@ class SolveSteepestDescent(SolveMinProbl):
         self.min = self.err[-1]
         self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
         self.yhat_test = np.dot(self.X_test,self.sol)
-        print('Steepest descent:\n\ttrain_MSE = %.4f\n\ttest_MSE = %.4f\n\tval_MSE = %.4f\n' %(self.err[-1],self.errval[-1],self.errtest[-1]))
+        print('Steepest descent:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f\n' %(self.err[-1],self.errtest[-1],self.errval[-1]))      
 
 class SolveRidge(SolveMinProbl):
     """It computes ridge regression for many values of lambda.
@@ -352,7 +352,7 @@ class SolveRidge(SolveMinProbl):
                 #print("sol trovata, lambda=%d" % L)
                 self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
                 self.yhat_test = np.dot(self.X_test,self.sol)
-                print('Ridge regression:\n\ttrain_MSE = %.4f\n\ttest_MSE = %.4f\n\tval_MSE = %.4f' %(self.err[-1],self.errval[-1],self.errtest[-1]))      
+                print('Ridge regression:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f\n' %(self.err[-1],self.errtest[-1],self.errval[-1]))      
        
 
     def plotRidgeError(self):  
@@ -420,32 +420,32 @@ if __name__ == '__main__':
     
     # Linear least squares.
     lls.run()
-    #lls.plot_w('Linear least squares')
-    #lls.graphics('Linear least squares')
+    lls.plot_w('Linear least squares')
+    lls.graphics('Linear least squares')
 
     # Gradient descent.
     gd.run()
-    #gd.plot_w('Gradient descent')
-    #gd.plot_err('Gradient descent')
-    #gd.graphics('Gradient descent')
+    gd.plot_w('Gradient descent')
+    gd.plot_err('Gradient descent')
+    gd.graphics('Gradient descent')
 
     # Conjugate gradient descent.
     cgd.run()
-    #cgd.plot_w('Conjugate gradient method')
-    #cgd.plot_err('Conjugate gradient method')
-    #cgd.graphics('Conjugate gradient method')
+    cgd.plot_w('Conjugate gradient method')
+    cgd.plot_err('Conjugate gradient method')
+    cgd.graphics('Conjugate gradient method')
 
     # Stochastic gradient descent.
-    #sgd.run()
-    #sgd.plot_w('Stochastic gradient descent')
-    #sgd.plot_err('Stochastic gradient descent')
-    #sgd.graphics('Stochastic gradient descent')
+    sgd.run()
+    sgd.plot_w('Stochastic gradient descent')
+    sgd.plot_err('Stochastic gradient descent')
+    sgd.graphics('Stochastic gradient descent')
 
     # Steepest descent.
     sd.run()
-    #sd.plot_w('Steepest descent')
-    #sd.plot_err('Steepest descent')
-    #sd.graphics('Steepest descent')
+    sd.plot_w('Steepest descent')
+    sd.plot_err('Steepest descent')
+    sd.graphics('Steepest descent')
 
     # Ridge regression.
     ridge.run()
@@ -453,5 +453,5 @@ if __name__ == '__main__':
     ridge.plotRidgeError()
     ridge.graphics('Ridge regression')
 
-    plt.show()
+    #plt.show()
     print("--- END ---")
