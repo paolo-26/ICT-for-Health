@@ -53,14 +53,14 @@ class SolveMinProbl(object):
         self.m = mean
         self.s = std
 
-    def plot_w(self, title):
+    def plot_w(self, title, filename):
         """It plots the w vector with stem and feature names on xlabel.
         """
         w = self.sol
         n = np.arange(self.Nf)
         plt.figure()
         plt.stem(n, w.reshape(len(w),))
-        plt.ylabel('$w(n)$')
+        plt.ylabel(r'$\mathbf{w}(n)$')
         plt.xticks(ticks=range(self.Nf), labels=[r'UPDRS$_{\mathrm{Motor}}$',
             r'Jitter$_{(\%)}$',
             r'Jitter$_{\mathrm{(Abs)}}$',r'Jitter$_{\mathrm{RAP}}$',
@@ -75,7 +75,7 @@ class SolveMinProbl(object):
         #plt.show()
         #plt.ylim([-0.5,0.5])
         plt.subplots_adjust(bottom=0.25)  # Margin for labels
-        plt.savefig("w_"+title.replace(" ", "_")+".pdf")
+        plt.savefig("w_"+filename.replace(" ", "_")+".pdf")
 
     def print_result(self, title):
         """It prints the w vector on screen.
@@ -84,7 +84,7 @@ class SolveMinProbl(object):
         print('The optimum weight vector is:')
         print(self.sol,"\n")
 
-    def plot_err(self, title='Algorithm', logy=1, logx=0):
+    def plot_err(self, title, filename, logy=1, logx=0):
         """It plots the MSE in different log scales.
         Default: semilogy
 
@@ -127,10 +127,10 @@ class SolveMinProbl(object):
         plt.grid(b=True, which='minor', color='xkcd:lilac', linestyle=':')
         plt.grid(b=True, which='major')
         plt.legend(['Training set','Validation set'])
-        plt.savefig("err_"+title.replace(" ", "_")+".pdf")
+        plt.savefig("err_"+filename.replace(" ", "_")+".pdf")
         #plt.show()
 
-    def graphics(self,title):
+    def graphics(self, title, filename):
         """
         It de-standardize the data with original std and mean values.
         It plots the histogram and scatter plot graphics.
@@ -148,54 +148,54 @@ class SolveMinProbl(object):
         plt.hist(ytrain-yhat_train, bins=50)
         plt.title(r'$\mathrm{y}_{\mathrm{train}} - \hat{\mathrm{y}}_{\mathrm{train}}$')
         plt.xlabel('Error')
-        plt.ylabel('Number of entries')
+        plt.ylabel('Frequency')
         plt.grid()
         plt.title(title+': Training set')
         plt.xlim([-16,16])
         plt.ylim([0,225])
         #plt.show()
-        plt.savefig("h_train_"+title.replace(" ", "_")+".pdf")
+        plt.savefig("h_train_"+filename.replace(" ", "_")+".pdf")
 
         # Histogram.
         plt.figure()
         plt.hist(ytest-yhat_test, bins=50, color='tab:orange')
         plt.title(r'$\mathrm{y}_{\mathrm{test}} - \hat{\mathrm{y}}_{\mathrm{test}}$')
         plt.xlabel('Error')
-        plt.ylabel('Number of entries')
+        plt.ylabel('Frequency')
         plt.grid()
         plt.title(title+': Test set')
         plt.xlim([-16,16])
         plt.ylim([0,225])
         #plt.show()
-        plt.savefig("h_test_"+title.replace(" ", "_")+".pdf")
+        plt.savefig("h_test_"+filename.replace(" ", "_")+".pdf")
 
         #  Scatter plot.
         plt.figure()
         plt.scatter(yhat_train, ytrain, marker="2")
-        plt.title(title+': '+r'$\hat{\mathrm{y}}_{\mathrm{train}}$ vs $y_{\mathrm{train}}$')
+        plt.title(title+': '+r'$\hat{\mathbf{y}}_{\mathrm{train}}$ vs $y_{\mathrm{train}}$')
         plt.grid()
-        plt.xlabel(r'$\mathrm{y}{\mathrm{train}}$')
-        plt.ylabel(r'$\hat{\mathrm{y}}_{\mathrm{train}}$')
+        plt.xlabel(r'$\mathbf{y}_{\mathrm{train}}$')
+        plt.ylabel(r'$\hat{\mathbf{y}}_{\mathrm{train}}$')
         plt.axis('equal')
         lined = [min(yhat_train), max(yhat_train)]
         plt.plot(lined, lined, color='tab:orange')  # Diagonal line
         plt.title(title+': Training set')
         #plt.show()
-        plt.savefig("s_train_"+title.replace(" ", "_")+".pdf")
+        plt.savefig("s_train_"+filename.replace(" ", "_")+".pdf")
 
         #  Scatter plot.
         plt.figure()
         plt.scatter(yhat_test, ytest, marker="2", color='tab:orange')
-        plt.title(title+': '+r'$\hat{\mathrm{y}}_{\mathrm{test}}$ vs $y_{\mathrm{test}}$')
+        plt.title(title+': '+r'$\hat{\mathbf{y}}_{\mathrm{test}}$ vs $\mathbf{y}_{\mathrm{test}}$')
         plt.grid()
-        plt.xlabel(r'$\mathrm{y}_{\mathrm{test}}$')
-        plt.ylabel(r'$\hat{\mathrm{y}}_{\mathrm{test}}$')
+        plt.xlabel(r'$\mathbf{y}_{\mathrm{test}}$')
+        plt.ylabel(r'$\hat{\mathbf{y}}_{\mathrm{test}}$')
         plt.axis('equal')
         lined = [min(yhat_train), max(yhat_train)]
         plt.plot(lined, lined, color='tab:red')  # Diagonal line
         plt.title(title+': Test set')
         #plt.show()
-        plt.savefig("s_test_"+title.replace(" ", "_")+".pdf")
+        plt.savefig("s_test_"+filename.replace(" ", "_")+".pdf")
 
 class SolveLLS(SolveMinProbl):
 
@@ -425,38 +425,38 @@ if __name__ == '__main__':
     
     # Linear least squares.
     lls.run()
-    lls.plot_w('Linear least squares')
-    lls.graphics('Linear least squares')
+    lls.plot_w('Linear least squares','LLS')
+    lls.graphics('Linear least squares','LLS')
 
     # Gradient descent.
     gd.run()
-    gd.plot_w('Gradient descent')
-    gd.plot_err('Gradient descent')
-    gd.graphics('Gradient descent')
+    gd.plot_w('Gradient descent', 'Gradient')
+    gd.plot_err('Gradient descent', 'Gradient')
+    gd.graphics('Gradient descent', 'Gradient')
 
     # Conjugate gradient descent.
     cgd.run()
-    cgd.plot_w('Conjugate gradient method')
-    cgd.plot_err('Conjugate gradient method')
-    cgd.graphics('Conjugate gradient method')
+    cgd.plot_w('Conjugate gradient method', 'Conjugate')
+    cgd.plot_err('Conjugate gradient method', 'Conjugate')
+    cgd.graphics('Conjugate gradient method', 'Conjugate')
 
     # Stochastic gradient descent.
     sgd.run()
-    sgd.plot_w('Stochastic gradient descent')
-    sgd.plot_err('Stochastic gradient descent')
-    sgd.graphics('Stochastic gradient descent')
+    sgd.plot_w('Stochastic gradient descent', 'Stochastic')
+    sgd.plot_err('Stochastic gradient descent', 'Stochastic')
+    sgd.graphics('Stochastic gradient descent', 'Stochastic')
 
     # Steepest descent.
     sd.run()
-    sd.plot_w('Steepest descent')
-    sd.plot_err('Steepest descent')
-    sd.graphics('Steepest descent')
+    sd.plot_w('Steepest descent', 'Steepest')
+    sd.plot_err('Steepest descent', 'Steepest')
+    sd.graphics('Steepest descent', 'Steepest')
 
     # Ridge regression.
     ridge.run()
-    ridge.plot_w('Ridge regression')
+    ridge.plot_w('Ridge regression', 'Ridge')
     ridge.plotRidgeError()
-    ridge.graphics('Ridge regression')
+    ridge.graphics('Ridge regression', 'Ridge')
 
     #plt.show()
     print("--- END ---")
