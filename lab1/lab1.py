@@ -60,7 +60,7 @@ class SolveMinProbl(object):
         n = np.arange(self.Nf)
         plt.figure()
         plt.stem(n, w.reshape(len(w),))
-        plt.ylabel(r'$\mathbf{w}(n)$')
+        plt.ylabel(r'$\hat{\mathbf{w}}(n)$')
         plt.xticks(ticks=range(self.Nf), labels=[r'UPDRS$_{\mathrm{Motor}}$',
             r'Jitter$_{(\%)}$',
             r'Jitter$_{\mathrm{(Abs)}}$',r'Jitter$_{\mathrm{RAP}}$',
@@ -214,7 +214,7 @@ class SolveLLS(SolveMinProbl):
 
 class SolveGrad(SolveMinProbl):
 
-    def run(self, gamma=1e-5, Nit=7500, eps=1e-3):
+    def run(self, gamma=1e-5, Nit=10000, eps=1e-4):
         A = self.X_train
         y = self.y_train
         w = np.random.rand(self.Nf,1)
@@ -246,7 +246,7 @@ class SolveGrad(SolveMinProbl):
 
 class SolveStochasticGradient(SolveMinProbl):
 
-    def run(self, Nit=2500, gamma=1e-5, eps=1e-3):
+    def run(self, Nit=10000, gamma=1e-5, eps=1e-4):
         A = self.X_train
         y = self.y_train
         w = np.random.rand(self.Nf,1)
@@ -307,7 +307,7 @@ class SolveConjugateGradient(SolveMinProbl):
 
 class SolveSteepestDescent(SolveMinProbl):
 
-    def run(self, Nit=2500, eps=1e-3):
+    def run(self, Nit=10000, eps=1e-4):
         A = self.X_train
         y = self.y_train
         w = np.random.rand(self.Nf,1)
@@ -337,7 +337,7 @@ class SolveSteepestDescent(SolveMinProbl):
 class SolveRidge(SolveMinProbl):
     """It computes ridge regression for many values of lambda.
     """
-    def run(self, Lambda=range(1,100)):
+    def run(self, Lambda=np.linspace(0.001,80,num=200)):
         self.lambda_range = Lambda
 
         for L in Lambda:
