@@ -146,9 +146,9 @@ class SolveMinProbl(object):
         # Histogram.
         plt.figure()
         plt.hist(ytrain-yhat_train, bins=50)
-        plt.title(r'$\mathrm{y}_{\mathrm{train}} - \hat{\mathrm{y}}_{\mathrm{train}}$')
-        plt.xlabel('Error')
-        plt.ylabel('Frequency')
+        #plt.title(r'$\mathrm{y}_{\mathrm{train}} - \hat{\mathrm{y}}_{\mathrm{train}}$')
+        plt.xlabel('Error '+r'$(\mathrm{y}_{\mathrm{train}} - \hat{\mathrm{y}}_{\mathrm{train}})$')
+        plt.ylabel('Instances')
         plt.grid()
         plt.title(title+': Training set')
         plt.xlim([-16,16])
@@ -159,9 +159,9 @@ class SolveMinProbl(object):
         # Histogram.
         plt.figure()
         plt.hist(ytest-yhat_test, bins=50, color='tab:orange')
-        plt.title(r'$\mathrm{y}_{\mathrm{test}} - \hat{\mathrm{y}}_{\mathrm{test}}$')
-        plt.xlabel('Error')
-        plt.ylabel('Frequency')
+        #plt.title(r'$\mathrm{y}_{\mathrm{test}} - \hat{\mathrm{y}}_{\mathrm{test}}$')
+        plt.xlabel('Error '+r'$(\mathrm{y}_{\mathrm{test}} - \hat{\mathrm{y}}_{\mathrm{test}})$')
+        plt.ylabel('Instances')
         plt.grid()
         plt.title(title+': Test set')
         plt.xlim([-16,16])
@@ -207,9 +207,17 @@ class SolveLLS(SolveMinProbl):
         self.min = np.linalg.norm(np.dot(A, w)-y)**2
         self.yhat_train = np.dot(A, self.sol).reshape(len(y),)
         self.yhat_test = np.dot(self.X_test, self.sol)
-        self.err.append((np.linalg.norm(np.dot(A,w)-y)**2)/self.Np)
-        self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
-        self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
+
+        # Errors on standardized vectors.
+        #self.err.append((np.linalg.norm(np.dot(A,w)-y)**2)/self.Np)
+        #self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
+        #self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
+
+        # Errors on de-standardized vectors.
+        self.err.append((np.linalg.norm((np.dot(A,w)*self.s+self.m)-(y*self.s+self.m))**2)/self.Np)
+        self.errval.append(np.linalg.norm((np.dot(self.X_val,w)*self.s+self.m)-(self.y_val*self.s+self.m))**2/len(self.y_val))
+        self.errtest.append(np.linalg.norm((np.dot(self.X_test,w)*self.s+self.m)-(self.y_test*self.s+self.m))**2/len(self.y_test))
+                   
         print('Linear least squares:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f\n' %(self.err[-1],self.errtest[-1],self.errval[-1]))      
 
 class SolveGrad(SolveMinProbl):
@@ -229,9 +237,18 @@ class SolveGrad(SolveMinProbl):
                 break
 
             w=copy.deepcopy(w2)
-            self.err.append((np.linalg.norm(np.dot(A,w)-y)**2)/self.Np)
-            self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
-            self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
+
+            # Errors on standardized vectors.
+            #self.err.append((np.linalg.norm(np.dot(A,w)-y)**2)/self.Np)
+            #self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
+            #self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
+
+            # Errors on de-standardized vectors.
+            self.err.append((np.linalg.norm((np.dot(A,w)*self.s+self.m)-(y*self.s+self.m))**2)/self.Np)
+            self.errval.append(np.linalg.norm((np.dot(self.X_val,w)*self.s+self.m)-(self.y_val*self.s+self.m))**2/len(self.y_val))
+            self.errtest.append(np.linalg.norm((np.dot(self.X_test,w)*self.s+self.m)-(self.y_test*self.s+self.m))**2/len(self.y_test))
+
+
             #if (gamma*(np.linalg.norm(grad))<eps):
             #   print("Conjugate gradient stopped after %d iterations, ERR = %4f" %(it,self.err[-1]))
             #   break
@@ -262,9 +279,15 @@ class SolveStochasticGradient(SolveMinProbl):
                 #print("Stochastic gradient descent has stopped after %d iterations, MSE = %4f" %(it,self.err[-1]))
                 break
 
-            self.err.append(np.linalg.norm(np.dot(A,w)-y)**2/self.Np)
-            self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
-            self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
+            # Errors on standardized vectors.
+            #self.err.append(np.linalg.norm(np.dot(A,w)-y)**2/self.Np)
+            #self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
+            #self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
+
+            # Errors on de-standardized vectors.
+            self.err.append((np.linalg.norm((np.dot(A,w)*self.s+self.m)-(y*self.s+self.m))**2)/self.Np)
+            self.errval.append(np.linalg.norm((np.dot(self.X_val,w)*self.s+self.m)-(self.y_val*self.s+self.m))**2/len(self.y_val))
+            self.errtest.append(np.linalg.norm((np.dot(self.X_test,w)*self.s+self.m)-(self.y_test*self.s+self.m))**2/len(self.y_test))
             #if (gamma*(np.linalg.norm(grad_i))<eps):
             #   print("Stochastic gradient stopped after %d iterations, ERR = %4f" %(it,self.err[-1]))
             #   break
@@ -294,9 +317,16 @@ class SolveConjugateGradient(SolveMinProbl):
             g = g + alpha*(np.dot(Q,d))
             beta = np.dot(np.dot(g.T,Q),d)/np.dot(np.dot(d.T,Q),d)
             d = -g + beta*d
-            self.err.append(np.linalg.norm(np.dot(A,w)-y)**2/self.Np)
-            self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
-            self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
+
+            # Errors on standardized vectors.
+            #self.err.append(np.linalg.norm(np.dot(A,w)-y)**2/self.Np)
+            #self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
+            #self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
+
+            # Errors on de-standardized vectors.
+            self.err.append((np.linalg.norm((np.dot(A,w)*self.s+self.m)-(y*self.s+self.m))**2)/self.Np)
+            self.errval.append(np.linalg.norm((np.dot(self.X_val,w)*self.s+self.m)-(self.y_val*self.s+self.m))**2/len(self.y_val))
+            self.errtest.append(np.linalg.norm((np.dot(self.X_test,w)*self.s+self.m)-(self.y_test*self.s+self.m))**2/len(self.y_test))
 
         self.sol = w
         self.min = self.err[-1]
@@ -323,9 +353,16 @@ class SolveSteepestDescent(SolveMinProbl):
                 break
 
             w = copy.deepcopy(w2)
-            self.err.append(np.linalg.norm(np.dot(A,w)-y)**2/self.Np)
-            self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
-            self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
+
+            # Errors on standardized vectors.
+            #self.err.append(np.linalg.norm(np.dot(A,w)-y)**2/self.Np)
+            #self.errval.append(np.linalg.norm(np.dot(self.X_val,w)-self.y_val)**2/len(self.y_val))
+            #self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
+
+            # Errors on de-standardized vectors
+            self.err.append((np.linalg.norm((np.dot(A,w)*self.s+self.m)-(y*self.s+self.m))**2)/self.Np)
+            self.errval.append(np.linalg.norm((np.dot(self.X_val,w)*self.s+self.m)-(self.y_val*self.s+self.m))**2/len(self.y_val))
+            self.errtest.append(np.linalg.norm((np.dot(self.X_test,w)*self.s+self.m)-(self.y_test*self.s+self.m))**2/len(self.y_test))
 
         self.sol = w
         self.min = self.err[-1]
@@ -346,10 +383,18 @@ class SolveRidge(SolveMinProbl):
             w=np.random.rand(self.Nf,1)
             I = np.eye(self.Nf)
             w = np.dot(np.dot(np.linalg.inv((np.dot(A.T,A) + L*I)),A.T),y)
-            self.err.append(float(np.linalg.norm(np.dot(A,w)-y))**2/self.Np)
-            self.errval.append(float(np.linalg.norm(np.dot(self.X_val,w)-self.y_val))**2/len(self.y_val))
+
+            # Errors on standardized vectors.
+            #self.err.append(float(np.linalg.norm(np.dot(A,w)-y))**2/self.Np)
+            #self.errval.append(float(np.linalg.norm(np.dot(self.X_val,w)-self.y_val))**2/len(self.y_val))
+            #self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
+
+            # Errors on de-standardized vectors.
+            self.err.append((np.linalg.norm((np.dot(A,w)*self.s+self.m)-(y*self.s+self.m))**2)/self.Np)
+            self.errval.append(np.linalg.norm((np.dot(self.X_val,w)*self.s+self.m)-(self.y_val*self.s+self.m))**2/len(self.y_val))
+            self.errtest.append(np.linalg.norm((np.dot(self.X_test,w)*self.s+self.m)-(self.y_test*self.s+self.m))**2/len(self.y_test))
+
             self.min=min(self.err)
-            self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
 
             if self.err[-1] <= self.min:
                 self.sol = w
