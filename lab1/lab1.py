@@ -60,7 +60,7 @@ class SolveMinProbl(object):
         n = np.arange(self.Nf)
         plt.figure()
         plt.stem(n, w.reshape(len(w),))
-        plt.ylabel(r'$\hat{\mathbf{w}}(n)$')
+        plt.ylabel(r'$\hat{\mathbf{w}}(f)$')
         plt.xticks(ticks=range(self.Nf), labels=[r'UPDRS$_{\mathrm{Motor}}$',
             r'Jitter$_{(\%)}$',
             r'Jitter$_{\mathrm{(Abs)}}$',r'Jitter$_{\mathrm{RAP}}$',
@@ -119,8 +119,8 @@ class SolveMinProbl(object):
             plt.semilogy(err, color='tab:blue')
             plt.semilogy(errval, color='tab:red', linestyle=':')
 
-        plt.xlabel('$n$')
-        plt.ylabel('$MSE(n)$')
+        plt.xlabel('$i$')
+        plt.ylabel('$MSE(i)$')
         plt.title(title+': mean squared error')
         #plt.margins(0.01,0.1)
         plt.minorticks_on()
@@ -171,7 +171,7 @@ class SolveMinProbl(object):
 
         #  Scatter plot.
         plt.figure()
-        plt.scatter(yhat_train, ytrain, marker="2")
+        plt.scatter(ytrain,yhat_train, marker="2")
         plt.title(title+': '+r'$\hat{\mathbf{y}}_{\mathrm{train}}$ vs $y_{\mathrm{train}}$')
         plt.grid()
         plt.xlabel(r'$\mathbf{y}_{\mathrm{train}}$')
@@ -185,7 +185,7 @@ class SolveMinProbl(object):
 
         #  Scatter plot.
         plt.figure()
-        plt.scatter(yhat_test, ytest, marker="2", color='tab:orange')
+        plt.scatter(ytest,yhat_test, marker="2", color='tab:orange')
         plt.title(title+': '+r'$\hat{\mathbf{y}}_{\mathrm{test}}$ vs $\mathbf{y}_{\mathrm{test}}$')
         plt.grid()
         plt.xlabel(r'$\mathbf{y}_{\mathrm{test}}$')
@@ -267,13 +267,18 @@ class SolveStochasticGradient(SolveMinProbl):
         A = self.X_train
         y = self.y_train
         w = np.random.rand(self.Nf,1)
-
+        #randomA = copy.deepcopy(A)
+        
         for it in range(Nit):
+            #np.random.shuffle(randomA)
             w2 = copy.deepcopy(w)
 
             for i in range(self.Np):
                 grad_i = 2*(np.dot(A[i,:].T,w)-y[i]) * A[i,:].reshape(len(A[i,:]),1)
                 w = w - gamma*grad_i
+                #self.err.append((np.linalg.norm((np.dot(A,w)*self.s+self.m)-(y*self.s+self.m))**2)/self.Np)
+                #self.errval.append(np.linalg.norm((np.dot(self.X_val,w)*self.s+self.m)-(self.y_val*self.s+self.m))**2/len(self.y_val))
+                #self.errtest.append(np.linalg.norm((np.dot(self.X_test,w)*self.s+self.m)-(self.y_test*self.s+self.m))**2/len(self.y_test))
 
             if np.linalg.norm(w2-w) < eps:
                 #print("Stochastic gradient descent has stopped after %d iterations, MSE = %4f" %(it,self.err[-1]))
@@ -297,7 +302,7 @@ class SolveStochasticGradient(SolveMinProbl):
         self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
         self.yhat_test = np.dot(self.X_test,self.sol)
         print('Stochastic gradient descent:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f' %(self.err[-1],self.errtest[-1],self.errval[-1])) 
-        print('\tIterations = %d\n' %it)          
+        print('\tIterations = %d\n' %((it+1)*self.Np))          
 
 class SolveConjugateGradient(SolveMinProbl):
 
