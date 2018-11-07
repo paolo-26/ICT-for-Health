@@ -11,8 +11,8 @@ import math
 import copy
 
 np.random.seed(2)
-matplotlib.rc('text', usetex = True)  # For LaTeX text in matplotlib plots
-plt.rcParams.update({'figure.max_open_warning': 0})
+matplotlib.rc('text', usetex = True)  # For LaTeX font in matplotlib plots
+plt.rcParams.update({'figure.max_open_warning': 0})  # To avoid RAM usage warnings
 
 class SolveMinProbl(object):
     """It is the main class from which all the algorithms class are made.
@@ -50,8 +50,8 @@ class SolveMinProbl(object):
         self.err = []  # Mean square error for each iteration
         self.errval = []  # Mean square error for each iteration on validation set
         self.errtest = [] # Mean square error for each iteration on test set
-        self.m = mean
-        self.s = std
+        self.m = mean  # F0 mean
+        self.s = std  # F0 standard deviation
 
     def plot_w(self, title, filename):
         """It plots the w vector with stem and feature names on xlabel.
@@ -72,8 +72,6 @@ class SolveMinProbl(object):
             rotation='vertical')
         plt.title(title+': optimum weight vector')
         plt.grid(which='both')
-        #plt.show()
-        #plt.ylim([-0.5,0.5])
         plt.subplots_adjust(bottom=0.25)  # Margin for labels
         plt.savefig("w_"+filename.replace(" ", "_")+".pdf")
 
@@ -172,7 +170,7 @@ class SolveMinProbl(object):
         #  Scatter plot.
         plt.figure()
         plt.scatter(ytrain,yhat_train, marker="2")
-        plt.title(title+': '+r'$\hat{\mathbf{y}}_{\mathrm{train}}$ vs $y_{\mathrm{train}}$')
+        #plt.title(title+': '+r'$\hat{\mathbf{y}}_{\mathrm{train}}$ vs $y_{\mathrm{train}}$')
         plt.grid()
         plt.xlabel(r'$\mathbf{y}_{\mathrm{train}}$')
         plt.ylabel(r'$\hat{\mathbf{y}}_{\mathrm{train}}$')
@@ -186,7 +184,7 @@ class SolveMinProbl(object):
         #  Scatter plot.
         plt.figure()
         plt.scatter(ytest,yhat_test, marker="2", color='tab:orange')
-        plt.title(title+': '+r'$\hat{\mathbf{y}}_{\mathrm{test}}$ vs $\mathbf{y}_{\mathrm{test}}$')
+        #plt.title(title+': '+r'$\hat{\mathbf{y}}_{\mathrm{test}}$ vs $\mathbf{y}_{\mathrm{test}}$')
         plt.grid()
         plt.xlabel(r'$\mathbf{y}_{\mathrm{test}}$')
         plt.ylabel(r'$\hat{\mathbf{y}}_{\mathrm{test}}$')
@@ -236,7 +234,7 @@ class SolveGrad(SolveMinProbl):
                 #print("Gradient descent has stopped after %d iterations, MSE = %4f" %(it,self.err[-1]))
                 break
 
-            w=copy.deepcopy(w2)
+            w=copy.deepcopy(w2) 
 
             # Errors on standardized vectors.
             #self.err.append((np.linalg.norm(np.dot(A,w)-y)**2)/self.Np)
@@ -258,7 +256,7 @@ class SolveGrad(SolveMinProbl):
         self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
         self.yhat_test = np.dot(self.X_test,self.sol)
         print('Gradient descent:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f' %(self.err[-1],self.errtest[-1],self.errval[-1]))   
-        print('\tIterations = %d\n' %it)        
+        print('\tIterations = %d\n' %(it+1))        
 
 
 class SolveStochasticGradient(SolveMinProbl):
@@ -267,10 +265,8 @@ class SolveStochasticGradient(SolveMinProbl):
         A = self.X_train
         y = self.y_train
         w = np.random.rand(self.Nf,1)
-        #randomA = copy.deepcopy(A)
         
         for it in range(Nit):
-            #np.random.shuffle(randomA)
             w2 = copy.deepcopy(w)
 
             for i in range(self.Np):
@@ -374,14 +370,15 @@ class SolveSteepestDescent(SolveMinProbl):
         self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
         self.yhat_test = np.dot(self.X_test,self.sol)
         print('Steepest descent:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f' %(self.err[-1],self.errtest[-1],self.errval[-1])) 
-        print('\tIterations = %d\n' %it)     
+        print('\tIterations = %d\n' %(it+1))     
 
 class SolveRidge(SolveMinProbl):
     """It computes ridge regression for many values of lambda.
     """
     def run(self, Lambda=np.linspace(0.001,80,num=200)):
         self.lambda_range = Lambda
-
+        self.errvalid=[]
+        it = 0
         for L in Lambda:
             A = self.X_train
             y = self.y_train
@@ -391,7 +388,7 @@ class SolveRidge(SolveMinProbl):
 
             # Errors on standardized vectors.
             #self.err.append(float(np.linalg.norm(np.dot(A,w)-y))**2/self.Np)
-            #self.errval.append(float(np.linalg.norm(np.dot(self.X_val,w)-self.y_val))**2/len(self.y_val))
+            self.errvalid.append(float(np.linalg.norm(np.dot(self.X_val,w)-self.y_val))**2/len(self.y_val))
             #self.errtest.append(np.linalg.norm(np.dot(self.X_test,w)-self.y_test)**2/len(self.y_test))
 
             # Errors on de-standardized vectors.
@@ -399,14 +396,17 @@ class SolveRidge(SolveMinProbl):
             self.errval.append(np.linalg.norm((np.dot(self.X_val,w)*self.s+self.m)-(self.y_val*self.s+self.m))**2/len(self.y_val))
             self.errtest.append(np.linalg.norm((np.dot(self.X_test,w)*self.s+self.m)-(self.y_test*self.s+self.m))**2/len(self.y_test))
 
-            self.min=min(self.err)
+            self.min=min(self.errvalid)
 
-            if self.err[-1] <= self.min:
+            if self.errvalid[-1] <= self.min:
                 self.sol = w
-                #print("sol trovata, lambda=%d" % L)
+                it_best = it
+                lambda_best = L
                 self.yhat_train = np.dot(A,self.sol).reshape(len(y),)
                 self.yhat_test = np.dot(self.X_test,self.sol)
-                print('Ridge regression:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f\n' %(self.err[-1],self.errtest[-1],self.errval[-1]))      
+            it += 1
+        print('Ridge regression:\n\ttraining_MSE = %.4f\n\ttest_MSE = %.4f\n\tvalidation_MSE = %.4f' %(self.err[it_best],self.errtest[it_best],self.errval[it_best]))      
+        print('\tLambda = %f' %lambda_best)
        
 
     def plotRidgeError(self):  
