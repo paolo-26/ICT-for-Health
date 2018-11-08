@@ -1,2 +1,2 @@
-# ICT-for-Health
+# ICT for Health
 Laboratory activities.
