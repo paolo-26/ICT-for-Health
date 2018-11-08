@@ -21,13 +21,8 @@ class SolveMinProbl(object):
     ----------
     y : vector of floats
         column vector of feature F0
-    A : matrix Np*Nf of floats
+    X : matrix Np*Nf of floats
         matrix containing all features except F0
-    yval : vector of floats
-        y vector used for validation
-    Xval : matrix of float
-        X matrix used for validation
-    Xtest : vector of float used for test
     mean : float
         Mean value used to de-standardize the data for the plots.
     std : 
