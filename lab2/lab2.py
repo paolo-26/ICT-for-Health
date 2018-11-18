@@ -14,27 +14,37 @@ RANDOM_STATE = 0
 class Image(object):
 
     def __init__(self, filename):
-        self.im_or = mpimg.imread(filename)
-        self.im_2D = self.convert_2D()
-        self.im_2D_quant = copy.deepcopy(self.im_2D)
+        self.im = mpimg.imread(filename)  # Original image
+        self.im_quant = self.quantize()  # 3-color image
+        self.find_middle()
+        self.prints()
+
+    def quantize(self):
+        im_2D = convert_to_2D(self.im)
+        im_2D_quant = copy.deepcopy(im_2D)  # A copy of 2D image
         self.kmeans = KMeans(n_clusters=NC, random_state=RANDOM_STATE)
-        self.kmeans.fit(self.im_2D)
+        self.kmeans.fit(im_2D)
         self.kmeans.cluster_centers_
         self.kmeans.labels_
-        self.run()
-
-    def run(self):
-        centroids = self.kmeans.cluster_centers_.astype('uint8')  # RGB colors
+        self.centroids = self.kmeans.cluster_centers_.astype('uint8')  # 8-bit RGB colors
 
         for kc in range(NC):
             index = (self.kmeans.labels_ == kc)
-            self.im_2D_quant[index,:] = centroids[kc,:]
+            im_2D_quant[index,:] = self.centroids[kc,:]
 
-        self.im_3D_quant = self.convert_3D()
-        print_image(self.im_3D_quant, 'Converted - %d clusters' %NC)
-        i_col = self.find_darkest(centroids)  # Find darkest color
-        im_clust = self.kmeans.labels_.reshape(self.N1, self.N2)
+        N1, N2, N3 = self.im.shape
+        return convert_to_3D(im_2D_quant, N1, N2, N3)
+
+    def find_middle(self):
+        # Find the color with minimum value of R+G+B.
+        # Note that [0 0 0] is black and [255 255 255] is black.
+        sc = np.sum(self.centroids, axis=1)  # Sum of RGB values
+        i_col = sc.argmin()  # Color with minimum brightness
+
+        N1, N2, N3 = self.im.shape
+        im_clust = self.kmeans.labels_.reshape(N1, N2)
         zpos = np.argwhere(im_clust == i_col)
+
         N_spots = int(input("How many spots? \n> "))
 
         # if N_spots == 1:
@@ -52,24 +62,22 @@ class Image(object):
         #         d[k] = np.linalg.norm(center_image-centers[k,:])
         #         center_mole = centers[d.argmin(),:]
 
-    def find_darkest(self, centroids):
-        sc = np.sum(centroids, axis=1)
-        i_col = sc.argmin()
-        return i_col
+    def prints(self):
+        print_image(self.im, 'Original')
+        print_image(self.im_quant, 'Converted - %d clusters' %NC)
+        plt.show()
 
-    def convert_2D(self):
-        self.N1, self.N2, self.N3 = self.im_or.shape
-        return self.im_or.reshape((self.N1*self.N2, self.N3))
+def convert_to_2D(img):
+    N1, N2, N3 = img.shape
+    return img.reshape((N1*N2, N3))
 
-    def convert_3D(self):
-        return self.im_2D_quant.reshape((self.N1, self.N2, self.N3))
-
+def convert_to_3D(img, N1, N2, N3):
+    return img.reshape((N1, N2, N3))
 
 def print_image(img,title=None):
     plt.figure()
     plt.imshow(img)
     plt.title(title)
-    plt.show()
 
 
 if __name__ == '__main__':
