@@ -11,15 +11,17 @@ import math
 
 NC = 3
 RANDOM_STATE = 0
+F = './moles/low_risk_1.jpg'
 
 class Image(object):
 
     def __init__(self, filename):
+        self.filename = filename
         self.im = mpimg.imread(filename)  # Original image
         self.im_quant = self.quantize()  # 3-color image
         self.find_shape()
         #self.prints()
-        self.refine()
+        self.polish()
 
     def quantize(self):
         im_2D = convert_to_2D(self.im)
@@ -51,20 +53,8 @@ class Image(object):
         plt.show()
         N_spots = int(input("How many spots? \n> "))
 
-        # if N_spots == 1:
-        #     center_mole = np.median(zpos, axis=0).astype(int)
-        # else:
-        #     kmeans2 = KMeans(n_clusters=N_spots, random_state=0)
-        #     kmeans2.fit(zpos)
-        #     centers = kmeans2.cluster_centers_.astype(int)
-        #
-        #     center_image = np.array([N1//2, N2//2])
-        #     center_image.shape = (1,2)
-        #     d = np.zeros((N_spots,1))
-        #
-        #     for k in range(N_spots):
-        #         d[k] = np.linalg.norm(center_image-centers[k,:])
-        #         center_mole = centers[d.argmin(),:]
+        if N_spots == 0:
+            print("Try to change cluster number")
 
         if N_spots == 1:
             center_mole = np.median(zpos,axis=0).astype(int)
@@ -112,55 +102,142 @@ class Image(object):
         #plt.show()
         #print("subset = \n", subset, "\n")
 
-    def clearing(self, img):
-        #for i in range(2):
-
-        # Clean isolated pixels
+    def clearing(self, img, r1=2, r2=8):
         cleared = copy.deepcopy(img)
 
         for r in range(2, self.subset.shape[0]-1):
             for c in range(2, self.subset.shape[1]-1):
                 mini = [[cleared[x][y] for x in range(r-1,r+2)]
                                        for y in range (c-1,c+2)]
-                if np.sum(mini) <= 2:
+                if np.sum(mini) <= r1:
                     cleared[r][c] = 0
-                if np.sum(mini) >= 8:
+                if np.sum(mini) >= r2:
                     cleared[r][c] = 1
 
-
-        #    sub = copy.deepcopy(inside)
         return cleared
 
-    def refine(self):
+    def clearing_white(self, img, r1=4, r2=8):
+        dim = self.subset.shape[0]
+        cleared = copy.deepcopy(img)
+        for r in range(2, round(dim/2)):
+            for c in range(2, round(dim/2)):
+                mini = [[cleared[x][y] for x in range(r-1,r+2)]
+                                       for y in range (c-1,c+2)]
+                if cleared[r][c] == 0:
+                    if np.sum(mini) >= r1:
+                        cleared[r][c] = 1
 
-        sub = self.clearing(self.subset)
-        plt.matshow(sub)
-        plt.title('cleared')
+        for r in range(2, round(dim/2)):
+            for c in range(round(dim/2),dim-1)[::-1]:
+                mini = [[cleared[x][y] for x in range(r-1,r+2)]
+                                       for y in range (c-1,c+2)]
+                if cleared[r][c] == 0:
+                    if np.sum(mini) >= r1:
+                        cleared[r][c] = 1
+
+        for r in range(round(dim/2),dim-1)[::-1]:
+            for c in range(round(dim/2),dim-1)[::-1]:
+                mini = [[cleared[x][y] for x in range(r-1,r+2)]
+                                       for y in range (c-1,c+2)]
+                if cleared[r][c] == 0:
+                    if np.sum(mini) >= r1:
+                        cleared[r][c] = 1
+
+        for r in range(round(dim/2),dim-1)[::-1]:
+            for c in range(2, round(dim/2)):
+                mini = [[cleared[x][y] for x in range(r-1,r+2)]
+                                       for y in range (c-1,c+2)]
+                if cleared[r][c] == 0:
+                    if np.sum(mini) >= r1:
+                        cleared[r][c] = 1
+
+        return cleared
+
+    # def clearing_black(self, img, r1=4, r2=8):
+    #     dim = self.subset.shape[0]
+    #     cleared = copy.deepcopy(img)
+    #     for r in range(2, round(dim/2))[::-1]:
+    #         for c in range(2, round(dim/2))[::-1]:
+    #             mini = [[cleared[x][y] for x in range(r-1,r+2)]
+    #                                    for y in range (c-1,c+2)]
+    #             if cleared[r][c] == 1:
+    #                 if np.sum(mini) <= r1:
+    #                     cleared[r][c] = 0
+    #
+    #     for r in range(2, round(dim/2))[::-1]:
+    #         for c in range(round(dim/2),dim-1):
+    #             mini = [[cleared[x][y] for x in range(r-1,r+2)]
+    #                                    for y in range (c-1,c+2)]
+    #             if cleared[r][c] == 1:
+    #                 if np.sum(mini) <= r1:
+    #                     cleared[r][c] = 0
+    #
+    #     for r in range(round(dim/2),dim-1):
+    #         for c in range(round(dim/2),dim-1):
+    #             mini = [[cleared[x][y] for x in range(r-1,r+2)]
+    #                                    for y in range (c-1,c+2)]
+    #             if cleared[r][c] == 1:
+    #                 if np.sum(mini) <= r1:
+    #                     cleared[r][c] = 0
+    #
+    #     for r in range(round(dim/2),dim-1):
+    #         for c in range(2, round(dim/2))[::-1]:
+    #             mini = [[cleared[x][y] for x in range(r-1,r+2)]
+    #                                    for y in range (c-1,c+2)]
+    #             if cleared[r][c] == 1:
+    #                 if np.sum(mini) <= r1:
+    #                     cleared[r][c] = 0
+    #
+    #     return cleared
+
+    def fullfill(self,img):
+        flag = 0
+        dim = img.shape[0]-1
+        for r in range(2, dim):
+            for c in range(3, round(dim/2)):
+                # if flag == 0:
+                #     if img[r][c] == 1:
+                #         flag = 1
+                # if img[r][c] == 0 and flag == 1:
+                #     img[r][c] = 1
+                # if img[r][c] == 1:
+                #     flag = 0
+                v = [img[r][x] for x in range(c-3,c)]
+                if img[r][c] == 0 and np.sum(v) == len(v):
+                    img[r][c] = 1
+
+        for r in range(2, dim):
+            for c in range(round(dim/2), dim-2)[::-1]:
+                # if flag == 0:
+                #     if img[r][c] == 1:
+                #         flag = 1
+                # if img[r][c] == 0 and flag == 1:
+                #     img[r][c] = 1
+                # if img[r][c] == 1:
+                #     flag = 0
+                v = [img[r][x] for x in range(c+1,c+4)]
+                if img[r][c] == 0 and np.sum(v) == len(v):
+                    img[r][c] = 1
+
+        return img
+
+    def polish(self):
+        sub = self.subset
+
+        for k in range(2):
+            sub = self.clearing(sub, r1=3)
+            sub = self.clearing_white(sub)
+        sub = self.clearing(sub, r1=4)
+
+        sub = self.fullfill(sub)
+        self.im_area = copy.deepcopy(sub)
+        plt.matshow(self.im_area)
+        plt.title('Area')
 
 
-        outside = copy.deepcopy(sub)
-        for i in range(5):
-            for r in range(2, self.subset.shape[0]-1):
-                for c in range(2, self.subset.shape[1]-1):
-                    #mini = [[sub[x][y] for x in range(r-1,r+2)] for y in range (c-1,c+2)]
-                    if ((sub[r-1][c] == 0) and (sub[r+1][c] == 0) and
-                        (sub[r][c-1] == 0) and (sub[r][c+1] == 0) and
-                        (sub[r][c] == 0)):
-                        outside[r][c] = 0
-                    else:
-                        outside[r][c] = 1
-                    # if np.sum(mini) <= 3:
-                    #     sub[r][c] = 0
-                    # if np.sum(mini) >= 7:
-                    #     sub[r][c] = 1
-            sub = copy.deepcopy(outside)
+        inside = copy.deepcopy(self.im_area)
 
-        plt.matshow(outside)
-        plt.title('outside')
-
-        inside = copy.deepcopy(outside)
-
-        for i in range(5):
+        for i in range(1):
             for r in range(2, self.subset.shape[0]-1):
                 for c in range(2, self.subset.shape[1]-1):
                     #mini = [[sub[x][y] for x in range(r-1,r+2)] for y in range (c-1,c+2)]
@@ -176,32 +253,66 @@ class Image(object):
                     #     sub[r][c] = 1
             sub = copy.deepcopy(inside)
 
-        plt.matshow(inside)
-        plt.title('Inside')
+        # outside = copy.deepcopy(self.im_area)
+        # sub = copy.deepcopy(self.im_area)
+        # for i in range(1):
+        #     for r in range(2, self.subset.shape[0]-1):
+        #         for c in range(2, self.subset.shape[1]-1):
+        #             #mini = [[sub[x][y] for x in range(r-1,r+2)] for y in range (c-1,c+2)]
+        #             if ((sub[r-1][c] == 0) and (sub[r+1][c] == 0) and
+        #                 (sub[r][c-1] == 0) and (sub[r][c+1] == 0) and
+        #                 (sub[r][c] == 0)):
+        #                 outside[r][c] = 0
+        #             else:
+        #                 outside[r][c] = 1
+        #             # if np.sum(mini) <= 3:
+        #             #     sub[r][c] = 0
+        #             # if np.sum(mini) >= 7:
+        #             #     sub[r][c] = 1
+        #     sub = copy.deepcopy(outside)
 
-
-        subber = (inside != outside)
-        contour = copy.deepcopy(subber)
-
-        for i in range(2):
-            for r in range(3, self.subset.shape[0]-2):
-                for c in range(3, self.subset.shape[1]-2):
-                    #mini = [[sub[x][y] for x in range(r-1,r+2)] for y in range (c-1,c+2)]
-                    if ((subber[r-1][c] == 1) and (subber[r+1][c] == 1) and
-                        (subber[r][c-1] == 1) and (subber[r][c+1] == 1) and
-                        (subber[r][c] == 1)):
-                        # (subber[r-2][c] == 1) and (subber[r+2][c] == 1) and
-                        # (subber[r][c-2] == 1) and (subber[r][c-2] == 1)):
-                        contour[r][c] = 1
-                    else:
-                        contour[r][c] = 0
-                    # if np.sum(mini) <= 3:
-                    #     sub[r][c] = 0
-                    # if np.sum(mini) >= 7:
-                    #     sub[r][c] = 1
-            subber = copy.deepcopy(contour)
-
+        contour = (inside != self.im_area)
         contour = contour*1
+        #contour = copy.deepcopy(subber)
+
+        # for i in range(0):
+        #     for r in range(3, self.subset.shape[0]-2):
+        #         for c in range(3, self.subset.shape[1]-2):
+        #             #mini = [[sub[x][y] for x in range(r-1,r+2)] for y in range (c-1,c+2)]
+        #             if ((subber[r-1][c] == 1) and (subber[r+1][c] == 1) and
+        #                 (subber[r][c-1] == 1) and (subber[r][c+1] == 1) and
+        #                 (subber[r][c] == 1)):
+        #                 contour[r][c] = 1
+        #             else:
+        #                 contour[r][c] = 0
+        #             # if np.sum(mini) <= 3:
+        #             #     sub[r][c] = 0
+        #             # if np.sum(mini) >= 7:
+        #             #     sub[r][c] = 1
+        #     subber = copy.deepcopy(contour)
+
+
+        #subber = subber*1
+
+        # plt.matshow(subber)
+        # plt.show()
+        # for i in range(1):
+        #     for r in range(3, self.subset.shape[0]-2):
+        #         for c in range(3, self.subset.shape[1]-2):
+        #             #mini = [[sub[x][y] for x in range(r-1,r+2)] for y in range (c-1,c+2)]
+        #             if subber[r-1][c] == 1 and subber[r][c] == 1:
+        #             # if ((subber[r-1][c] == 1) and (subber[r+1][c] == 1) and
+        #             #     (subber[r][c-1] == 1) and (subber[r][c+1] == 1) and
+        #             #     (subber[r][c] == 1)):
+        #                 contour[r][c] = 1
+        #             else:
+        #                 contour[r][c] = 0
+        #             # if np.sum(mini) <= 3:
+        #             #     sub[r][c] = 0
+        #             # if np.sum(mini) >= 7:
+        #             #     sub[r][c] = 1
+        #     subber = copy.deepcopy(contour)
+
         # for r in range(1, contour.shape[0]):
         #     for c in range(1, contour.shape[1]):
         #         if contour[r][c] == True:
@@ -209,46 +320,14 @@ class Image(object):
         #         if contour[r][c] == False:
         #             contour[r][c] = 1
         plt.matshow(contour)
-        plt.title('Contour')
+        plt.title('Perimeter')
 
-
-
-        defi = [[subber[x][y] for y in range(2,subber.shape[0]-1)] for x in range(2,subber.shape[1]-1)]
-        # for r in range(subber.shape[0]):
-        #     subber[r][0] = 0
-        #     subber[r][subber.shape[0]-1] = 0
-        #
-        # for c in range(subber.shape[1]):
-        #     subber[0][c] = 0
-        #     subber[subber.shape[1]-1][c] = 0
-
-        plt.matshow(defi)
-        plt.show()
-
-        self.area = np.sum(inside)
-        #
-        # # Perimeter
-        # per = 0
-        # for i in range(2):
-        #     for r in range(2, self.subset.shape[0]-1):
-        #         for c in range(2, self.subset.shape[1]-1):
-        #             if sub[r][c] == 1:
-        #                 neigh = 0
-        #                 if sub[r-1][c] == 1:
-        #                     neigh += 1
-        #                 if sub[r+1][c] == 1:
-        #                     neigh += 1
-        #                 if sub[r][c-1] == 1:
-        #                     neigh +=1
-        #                 if sub[r][c+1] == 1:
-        #                     neigh +=1
-        #                     print(neigh)
-        #                 per += (4-neigh)
-        #
-        self.perimeter = np.sum(defi)
+        self.area = np.sum(self.im_area)
+        self.perimeter = np.sum(contour)
         self.circle_perimeter = 2 * math.pi * math.sqrt(self.area/math.pi)
 
     def info(self):
+        print("Filename: %s" % self.filename)
         print("Area: %d" % self.area)
         print("Perimeter: %d" % self.perimeter)
         print("Circle perimeter: %.2f" % self.circle_perimeter)
@@ -257,7 +336,6 @@ class Image(object):
 
     def prints(self):
         print_image(self.im, 'Original')
-        plt.show()
 
 def convert_to_2D(img):
     N1, N2, N3 = img.shape
@@ -273,6 +351,7 @@ def print_image(img,title=None):
 
 
 if __name__ == '__main__':
-    imag = Image('./moles/melanoma_1.jpg')
+    imag = Image(F)
     imag.info()
+    plt.show()
     print(' --- END --- ')
