@@ -99,24 +99,24 @@ class Image(object):
 
         plt.matshow(subset)
         self.subset = subset
-        #plt.show()
-        #print("subset = \n", subset, "\n")
 
     def clearing(self, img, r1=2, r2=8):
         cleared = copy.deepcopy(img)
 
         for r in range(2, self.subset.shape[0]-1):
+
             for c in range(2, self.subset.shape[1]-1):
                 mini = [[cleared[x][y] for x in range(r-1,r+2)]
                                        for y in range (c-1,c+2)]
                 if np.sum(mini) <= r1:
                     cleared[r][c] = 0
+
                 if np.sum(mini) >= r2:
                     cleared[r][c] = 1
 
         return cleared
 
-    def clearing_white(self, img, r1=4, r2=8):
+    def clearing_white(self, img, r1=4):
         dim = self.subset.shape[0]
         cleared = copy.deepcopy(img)
         for r in range(2, round(dim/2)):
@@ -153,69 +153,23 @@ class Image(object):
 
         return cleared
 
-    # def clearing_black(self, img, r1=4, r2=8):
-    #     dim = self.subset.shape[0]
-    #     cleared = copy.deepcopy(img)
-    #     for r in range(2, round(dim/2))[::-1]:
-    #         for c in range(2, round(dim/2))[::-1]:
-    #             mini = [[cleared[x][y] for x in range(r-1,r+2)]
-    #                                    for y in range (c-1,c+2)]
-    #             if cleared[r][c] == 1:
-    #                 if np.sum(mini) <= r1:
-    #                     cleared[r][c] = 0
-    #
-    #     for r in range(2, round(dim/2))[::-1]:
-    #         for c in range(round(dim/2),dim-1):
-    #             mini = [[cleared[x][y] for x in range(r-1,r+2)]
-    #                                    for y in range (c-1,c+2)]
-    #             if cleared[r][c] == 1:
-    #                 if np.sum(mini) <= r1:
-    #                     cleared[r][c] = 0
-    #
-    #     for r in range(round(dim/2),dim-1):
-    #         for c in range(round(dim/2),dim-1):
-    #             mini = [[cleared[x][y] for x in range(r-1,r+2)]
-    #                                    for y in range (c-1,c+2)]
-    #             if cleared[r][c] == 1:
-    #                 if np.sum(mini) <= r1:
-    #                     cleared[r][c] = 0
-    #
-    #     for r in range(round(dim/2),dim-1):
-    #         for c in range(2, round(dim/2))[::-1]:
-    #             mini = [[cleared[x][y] for x in range(r-1,r+2)]
-    #                                    for y in range (c-1,c+2)]
-    #             if cleared[r][c] == 1:
-    #                 if np.sum(mini) <= r1:
-    #                     cleared[r][c] = 0
-    #
-    #     return cleared
-
-    def fullfill(self,img):
+    def fulfill(self,img):
         flag = 0
         dim = img.shape[0]-1
+
         for r in range(2, dim):
+
             for c in range(3, round(dim/2)):
-                # if flag == 0:
-                #     if img[r][c] == 1:
-                #         flag = 1
-                # if img[r][c] == 0 and flag == 1:
-                #     img[r][c] = 1
-                # if img[r][c] == 1:
-                #     flag = 0
                 v = [img[r][x] for x in range(c-3,c)]
+
                 if img[r][c] == 0 and np.sum(v) == len(v):
                     img[r][c] = 1
 
         for r in range(2, dim):
+
             for c in range(round(dim/2), dim-2)[::-1]:
-                # if flag == 0:
-                #     if img[r][c] == 1:
-                #         flag = 1
-                # if img[r][c] == 0 and flag == 1:
-                #     img[r][c] = 1
-                # if img[r][c] == 1:
-                #     flag = 0
                 v = [img[r][x] for x in range(c+1,c+4)]
+
                 if img[r][c] == 0 and np.sum(v) == len(v):
                     img[r][c] = 1
 
@@ -227,9 +181,10 @@ class Image(object):
         for k in range(2):
             sub = self.clearing(sub, r1=3)
             sub = self.clearing_white(sub)
+
         sub = self.clearing(sub, r1=4)
 
-        sub = self.fullfill(sub)
+        sub = self.fulfill(sub)
         self.im_area = copy.deepcopy(sub)
         plt.matshow(self.im_area)
         plt.title('Area')
@@ -237,88 +192,22 @@ class Image(object):
 
         inside = copy.deepcopy(self.im_area)
 
-        for i in range(1):
-            for r in range(2, self.subset.shape[0]-1):
-                for c in range(2, self.subset.shape[1]-1):
-                    #mini = [[sub[x][y] for x in range(r-1,r+2)] for y in range (c-1,c+2)]
-                    if ((sub[r-1][c] == 1) and (sub[r+1][c] == 1) and
-                        (sub[r][c-1] == 1) and (sub[r][c+1] == 1) and
-                        (sub[r][c] == 1)):
-                        inside[r][c] = 1
-                    else:
-                        inside[r][c] = 0
-                    # if np.sum(mini) <= 3:
-                    #     sub[r][c] = 0
-                    # if np.sum(mini) >= 7:
-                    #     sub[r][c] = 1
-            sub = copy.deepcopy(inside)
+        for r in range(2, self.subset.shape[0]-1):
 
-        # outside = copy.deepcopy(self.im_area)
-        # sub = copy.deepcopy(self.im_area)
-        # for i in range(1):
-        #     for r in range(2, self.subset.shape[0]-1):
-        #         for c in range(2, self.subset.shape[1]-1):
-        #             #mini = [[sub[x][y] for x in range(r-1,r+2)] for y in range (c-1,c+2)]
-        #             if ((sub[r-1][c] == 0) and (sub[r+1][c] == 0) and
-        #                 (sub[r][c-1] == 0) and (sub[r][c+1] == 0) and
-        #                 (sub[r][c] == 0)):
-        #                 outside[r][c] = 0
-        #             else:
-        #                 outside[r][c] = 1
-        #             # if np.sum(mini) <= 3:
-        #             #     sub[r][c] = 0
-        #             # if np.sum(mini) >= 7:
-        #             #     sub[r][c] = 1
-        #     sub = copy.deepcopy(outside)
+            for c in range(2, self.subset.shape[1]-1):
+                #mini = [[sub[x][y] for x in range(r-1,r+2)] for y in range (c-1,c+2)]
+                if ((sub[r-1][c] == 1) and (sub[r+1][c] == 1) and
+                    (sub[r][c-1] == 1) and (sub[r][c+1] == 1) and
+                    (sub[r][c] == 1)):
+                    inside[r][c] = 1
+                else:
+                    inside[r][c] = 0
+
+        sub = copy.deepcopy(inside)
 
         contour = (inside != self.im_area)
         contour = contour*1
-        #contour = copy.deepcopy(subber)
 
-        # for i in range(0):
-        #     for r in range(3, self.subset.shape[0]-2):
-        #         for c in range(3, self.subset.shape[1]-2):
-        #             #mini = [[sub[x][y] for x in range(r-1,r+2)] for y in range (c-1,c+2)]
-        #             if ((subber[r-1][c] == 1) and (subber[r+1][c] == 1) and
-        #                 (subber[r][c-1] == 1) and (subber[r][c+1] == 1) and
-        #                 (subber[r][c] == 1)):
-        #                 contour[r][c] = 1
-        #             else:
-        #                 contour[r][c] = 0
-        #             # if np.sum(mini) <= 3:
-        #             #     sub[r][c] = 0
-        #             # if np.sum(mini) >= 7:
-        #             #     sub[r][c] = 1
-        #     subber = copy.deepcopy(contour)
-
-
-        #subber = subber*1
-
-        # plt.matshow(subber)
-        # plt.show()
-        # for i in range(1):
-        #     for r in range(3, self.subset.shape[0]-2):
-        #         for c in range(3, self.subset.shape[1]-2):
-        #             #mini = [[sub[x][y] for x in range(r-1,r+2)] for y in range (c-1,c+2)]
-        #             if subber[r-1][c] == 1 and subber[r][c] == 1:
-        #             # if ((subber[r-1][c] == 1) and (subber[r+1][c] == 1) and
-        #             #     (subber[r][c-1] == 1) and (subber[r][c+1] == 1) and
-        #             #     (subber[r][c] == 1)):
-        #                 contour[r][c] = 1
-        #             else:
-        #                 contour[r][c] = 0
-        #             # if np.sum(mini) <= 3:
-        #             #     sub[r][c] = 0
-        #             # if np.sum(mini) >= 7:
-        #             #     sub[r][c] = 1
-        #     subber = copy.deepcopy(contour)
-
-        # for r in range(1, contour.shape[0]):
-        #     for c in range(1, contour.shape[1]):
-        #         if contour[r][c] == True:
-        #             contour[r][c] = 0
-        #         if contour[r][c] == False:
-        #             contour[r][c] = 1
         plt.matshow(contour)
         plt.title('Perimeter')
 
