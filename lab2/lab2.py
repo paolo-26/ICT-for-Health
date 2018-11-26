@@ -11,7 +11,7 @@ import math
 
 NC = 3
 RANDOM_STATE = 0
-F = './moles/low_risk_1.jpg'
+F = './moles/melanoma_5.jpg'
 
 class Image(object):
 
@@ -100,7 +100,7 @@ class Image(object):
         plt.matshow(subset)
         self.subset = subset
 
-    def clearing(self, img, r1=2, r2=8):
+    def cleaning(self, img, r1=2, r2=7):  # Clean isolated pixels
         cleared = copy.deepcopy(img)
 
         for r in range(2, self.subset.shape[0]-1):
@@ -116,7 +116,7 @@ class Image(object):
 
         return cleared
 
-    def clearing_white(self, img, r1=4):
+    def clean_in(self, img, r1=4):  # Clean from outside to inside
         dim = self.subset.shape[0]
         cleared = copy.deepcopy(img)
         for r in range(2, round(dim/2)):
@@ -153,22 +153,82 @@ class Image(object):
 
         return cleared
 
-    def fulfill(self,img):
+    def clean_out(self, img, r1=4):  # Clean from inside to outside
+        dim = self.subset.shape[0]
+        cleared = copy.deepcopy(img)
+        for r in range(2, round(dim/2))[::-1]:
+            for c in range(2, round(dim/2))[::-1]:
+                mini = [[cleared[x][y] for x in range(r-1,r+2)]
+                                       for y in range (c-1,c+2)]
+                if cleared[r][c] == 1:
+                    if np.sum(mini) <= r1:
+                        cleared[r][c] = 0
+
+        for r in range(2, round(dim/2))[::-1]:
+            for c in range(round(dim/2),dim-1):
+                mini = [[cleared[x][y] for x in range(r-1,r+2)]
+                                       for y in range (c-1,c+2)]
+                if cleared[r][c] == 1:
+                    if np.sum(mini) <= r1:
+                        cleared[r][c] = 0
+
+        for r in range(round(dim/2),dim-1):
+            for c in range(round(dim/2),dim-1):
+                mini = [[cleared[x][y] for x in range(r-1,r+2)]
+                                       for y in range (c-1,c+2)]
+                if cleared[r][c] == 1:
+                    if np.sum(mini) <= r1:
+                        cleared[r][c] = 0
+
+        for r in range(round(dim/2),dim-1):
+            for c in range(2, round(dim/2))[::-1]:
+                mini = [[cleared[x][y] for x in range(r-1,r+2)]
+                                       for y in range (c-1,c+2)]
+                if cleared[r][c] == 1:
+                    if np.sum(mini) <= r1:
+                        cleared[r][c] = 0
+
+        return cleared
+
+
+    def fill_h(self,img):
         flag = 0
         dim = img.shape[0]-1
 
-        for r in range(2, dim):
+        for r in range(1, dim):
 
-            for c in range(3, round(dim/2)):
-                v = [img[r][x] for x in range(c-3,c)]
+            for c in range(15, round(dim/2)):
+                v = [img[r][x] for x in range(c-15,c)]
 
                 if img[r][c] == 0 and np.sum(v) == len(v):
                     img[r][c] = 1
 
-        for r in range(2, dim):
+        for r in range(1, dim):
 
-            for c in range(round(dim/2), dim-2)[::-1]:
-                v = [img[r][x] for x in range(c+1,c+4)]
+            for c in range(round(dim/2), dim-14)[::-1]:
+                v = [img[r][x] for x in range(c+1,c+16)]
+
+                if img[r][c] == 0 and np.sum(v) == len(v):
+                    img[r][c] = 1
+
+        return img
+
+    def fill_v(self,img):
+        flag = 0
+        dim = img.shape[0]-1
+
+        for r in range(3, round(dim/2)):
+
+            for c in range(2, dim):
+                v = [img[x][c] for x in range(r-3,r)]
+
+                if img[r][c] == 0 and np.sum(v) == len(v):
+                    img[r][c] = 1
+
+        for r in range(round(dim/2), dim-2)[::-1]:
+
+            for c in range(2, dim):
+                v = [img[x][c] for x in range(r+1,r+4)]
 
                 if img[r][c] == 0 and np.sum(v) == len(v):
                     img[r][c] = 1
@@ -178,17 +238,19 @@ class Image(object):
     def polish(self):
         sub = self.subset
 
-        for k in range(2):
-            sub = self.clearing(sub, r1=3)
-            sub = self.clearing_white(sub)
+        for k in range(4):
+            sub = self.cleaning(sub)
 
-        sub = self.clearing(sub, r1=4)
+        for k in range(1):
+            sub = self.cleaning(sub)#, r1=3)
+            sub = self.clean_in(sub)
+            sub = self.clean_out(sub)
 
-        sub = self.fulfill(sub)
+        sub = self.cleaning(sub, r1=4)
+        sub = self.fill_h(sub)
         self.im_area = copy.deepcopy(sub)
         plt.matshow(self.im_area)
         plt.title('Area')
-
 
         inside = copy.deepcopy(self.im_area)
 
