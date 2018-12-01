@@ -7,6 +7,8 @@ import copy
 import numpy as np
 import matplotlib.pyplot as plt
 
+categorical_features = ['rbc','pc','pcc','ba','htn','dm','cad','appet','pe','ane','class']
+
 def removePatients(df, n):
     cnt = df.count(axis=1, level=None, numeric_only=False)
     index = [k for k in df.index.values if cnt[k] <= n]
@@ -156,6 +158,12 @@ if __name__ == '__main__':
 
 
     for F0 in range(25):
+
+        if features[F0] in categorical_features:
+            round_ = 1
+        else:
+            round_ = 0
+
         x_test_or = findPatients(data, F0, features)  # Original data
         x_test = copy.deepcopy(x_test_or)
 
@@ -166,12 +174,12 @@ if __name__ == '__main__':
             x_test.iloc[:,k] /= std[k]
 
         x_test = x_test.drop(columns=features[F0])  # Remove column F0
-        ridge = SolveRidge(x, x_test, F0, mean[F0], std[F0], features, round=1)
+        ridge = SolveRidge(x, x_test, F0, mean[F0], std[F0], features, round_)
         x_test_or[features[F0]] = ridge.y_hat_test  # Add regressed data to original data
         final = pd.concat([final, x_test_or])
 
 
-
+    # final['rbc'] = final['rbc'].replace(to_replace=1, value='normal')
 
     final = final.sort_index()
     with open('final_data.csv', 'w') as outfile:
