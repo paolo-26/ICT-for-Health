@@ -22,12 +22,13 @@ def selectPatients(df, n):
     return df
 
 def findPatients(df, col, ft):
-    print(df.shape[1])
     cnt = df.count(axis=1, level=None, numeric_only=False)
     index = [k for k in df.index.values if cnt[k] == df.shape[1] -1]
     index = [k for k in index if np.isnan(df.iloc[k,col])]
     df = df.loc[index]
     #df.index = range(len(df))
+    print(index)
+    #print('We have %d patients' %cnt[-1])
     return df
 
 class SolveRidge(object):
@@ -65,10 +66,15 @@ class SolveRidge(object):
         if self.r == 1:
             self.y_hat_test = [round(k) for k in self.y_hat_test]
 
-        plt.figure()
-        plt.plot(self.y_hat_test)
-        plt.plot(self.y_hat_train)
-        plt.show()
+
+        # plt.figure()
+        # plt.plot(self.y_hat_test,'x')
+        # plt.title('Regressed data for feature %d' % F0)
+        # #plt.plot(self.y_hat_train, '.')
+        # plt.show()
+
+
+
         # plt.figure()
         # tmp = [round(k) for k in (self.y_hat*s +m)]
         # plt.plot(tmp, '.')
@@ -135,42 +141,38 @@ if __name__ == '__main__':
     x = copy.deepcopy(data)  # Matrix with complete data
     x = removePatients(x, 20)
     x = selectPatients(x, 25)
-    initial = copy.deepcopy(x)
+    final = copy.deepcopy(x)
 
-    data.info()
-    F0 = 5
-    x_test_or = findPatients(data, F0, features)
-    x_test = copy.deepcopy(x_test_or)
-    # Normalize x.
+    # Standardize x.
     mean = []
     std = []
     for k in range(x.shape[1]):
         mean.append(np.mean(x.iloc[:,k]))
         x.iloc[:,k] -= mean[-1]
-        x_test.iloc[:,k] -= mean[-1]
+
         std.append(np.std(x.iloc[:,k]))
         x.iloc[:,k] /= std[-1]
-        x_test.iloc[:,k] /= std[-1]
-        # print('m = %.4f' %np.mean(x.iloc[:,k]))
-        # print('s = %.4f' %np.std(x.iloc[:,k]))
+
+
+
+    for F0 in range(25):
+        x_test_or = findPatients(data, F0, features)  # Original data
+        x_test = copy.deepcopy(x_test_or)
+
+
+        # Standardize x_test
+        for k in range(x.shape[1]):
+            x_test.iloc[:,k] -= mean[k]
+            x_test.iloc[:,k] /= std[k]
+
+        x_test = x_test.drop(columns=features[F0])  # Remove column F0
+        ridge = SolveRidge(x, x_test, F0, mean[F0], std[F0], features, round=1)
+        x_test_or[features[F0]] = ridge.y_hat_test  # Add regressed data to original data
+        final = pd.concat([final, x_test_or])
 
 
 
 
-
-
-
-
-    x_test = x_test.drop(columns=features[F0])
-
-    ridge = SolveRidge(x, x_test, F0, mean[F0], std[F0], features, round=1)
-
-    x_test_or[features[F0]] = ridge.y_hat_test
-
-    print(x_test_or)
-
-    final = pd.concat([initial, x_test_or])
     final = final.sort_index()
-
-    with open('deleteme.csv', 'w') as outfile:
+    with open('final_data.csv', 'w') as outfile:
         final.to_csv(outfile)  # Test final file
