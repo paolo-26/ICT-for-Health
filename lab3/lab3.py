@@ -137,7 +137,7 @@ if __name__ == '__main__':
     data = data.replace(to_replace='ckd', value=float(1))
     data = data.replace(to_replace='notckd', value=float(0))
 
-    with open('data.csv', 'w') as outfile:
+    with open('starting_data.csv', 'w') as outfile:
         data.to_csv(outfile)  # Save data as csv for better reading
 
     x = copy.deepcopy(data)  # Matrix with complete data
