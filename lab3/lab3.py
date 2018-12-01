@@ -38,6 +38,8 @@ data = data.replace(to_replace='yes', value=1)
 data = data.replace(to_replace='no', value=0)
 data = data.replace(to_replace='good', value=1)
 data = data.replace(to_replace='poor', value=0)
+data = data.replace(to_replace='ckd', value=1)
+data = data.replace(to_replace='notckd', value=0)
 
 
 data.info()
