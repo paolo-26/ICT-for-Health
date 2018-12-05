@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 categorical_features = ['rbc','pc','pcc','ba','htn','dm','cad','appet','pe','ane','class']
+LAMBDA = 10
 
 def removePatients(df, n):
     cnt = df.count(axis=1, level=None, numeric_only=False)
@@ -39,7 +40,7 @@ class SolveRidge(object):
         self.x_train = x_train.drop(columns=[ft[F0]]) # Remove F0 from x
         self.x_test = x_test
         self.r = round
-        self.run(m ,s)
+        self.run(m ,s, LAMBDA)
 
 
 
@@ -58,6 +59,8 @@ class SolveRidge(object):
         # plt.grid()
         # plt.ylabel(r'$\hat{\mathbf{w}}(f)$')
         # plt.show()
+
+
         self.y_hat_train = np.dot(x_train, w)*s + m
 
         if self.r == 1:
@@ -166,7 +169,6 @@ if __name__ == '__main__':
 
         x_test_or = findPatients(data, F0, features)  # Original data
         x_test = copy.deepcopy(x_test_or)
-
 
         # Standardize x_test
         for k in range(x.shape[1]):
