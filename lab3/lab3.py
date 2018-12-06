@@ -13,52 +13,61 @@ categorical_features = ['rbc','pc','pcc','ba','htn','dm','cad','appet','pe','ane
 LAMBDA = 10
 
 def removePatients(df, n):
+    """ Remove all patients with <= n valid values
+        Return the new database 'df'.
+    """
     cnt = df.count(axis=1, level=None, numeric_only=False)
     index = [k for k in df.index.values if cnt[k] <= n]
     df = df.drop(index)
-    #df.index = range(len(df))
     return df
 
 def selectPatients(df, n):
+    """ Keep only the patients with at least n valid values.
+        Return the new database 'df'.
+    """
     cnt = df.count(axis=1, level=None, numeric_only=False)
     index = [k for k in df.index.values if cnt[k] < n]
     df = df.drop(index)
-    #df.index = range(len(df))
     return df
 
-def findPatients(df, col, ft, c):
-    cnt = df.count(axis=1, level=None, numeric_only=False)
-    index = [k for k in df.index.values if cnt[k] == df.shape[1] -c]
-    index = [k for k in index if np.isnan(df.iloc[k,col])]
-    df = df.loc[index]
-    #df.index = range(len(df))
-    print("Patients found:", index)
-    #print('We have %d patients' %cnt[-1])
-    return df
+def findPatients(df, feat_vect, ft):
+    """ Find all patients whose missing features are contained in
+        the feat_vect vector.
+        Return the new database 'df' and a boolean value 'b' that
+        tells if some patients are found.
+    """
+    try:
+        L = len(feat_vect)
 
-def findMultiple(df, vec, ft):
-    cnt = df.count(axis=1, level=None, numeric_only=False)
-    index = [k for k in df.index.values if cnt[k] == df.shape[1] -len(vec)]
+    except:
+        L = 1
 
-    for c in range(len(vec)):
-        index = [k for k in index if np.isnan(df.iloc[k,vec[c]])]
+    cnt = df.count(axis=1, level=None, numeric_only=False)
+    index = [k for k in df.index.values if cnt[k] == df.shape[1] -L]
+
+    for c in range(L):
+        index = [k for k in index if np.isnan(df.iloc[k,feat_vect[c]])]
 
     df = df.loc[index]
 
     if index == []:
         b = 0  # pruning
     else:
-        print(index)
+        print("Working on patients\t", index)
         b = 1
 
     return (df, b)
 
 
 def roundValues(df, cat_f):
-
+    """ Round the values only for categorical features.
+    """
     for c in list(df):
         if c in cat_f:
             df[c] = [round(x) for x in df[c]]
+
+        if c == 'sg':
+            df[c] = [round(x,3) for x in df[c]]
 
     return df
 
@@ -66,7 +75,8 @@ def roundValues(df, cat_f):
 class SolveRidge(object):
 
     def __init__(self, x_train, x_test, F0, feat_list, m, s):
-        print("Regressing", feat_list, "\n")
+        print("Regressing values of\t", feat_list)
+        print("---------------------------------------")
         self.y = x_train.iloc[:,F0]  # Define y as column F0
         self.x_train = x_train.drop(columns=feat_list) # Remove F0 from x
         self.x_test = x_test
@@ -110,6 +120,7 @@ if __name__ == '__main__':
 
             if t[0] == '@attribute':  # Line that contain a feature name
                 features.append(t[1].replace("'",""))  # Add feature to list
+                
             if t[0] == '@data':  # No more features, break
                 break
 
@@ -137,43 +148,32 @@ if __name__ == '__main__':
     # Standardize x training.
     mean = []
     std = []
+
     for k in range(x.shape[1]):
         mean.append(np.mean(x.iloc[:,k]))
         x.iloc[:,k] -= mean[-1]
-
         std.append(np.std(x.iloc[:,k]))
         x.iloc[:,k] /= std[-1]
 
-    # PART 1: regressing single features
-    for F0 in range(25):
-        x_test_or = findPatients(data, F0, features, 1)  # Original data
-        x_test = copy.deepcopy(x_test_or)
-
-        # Standardize x_test
-        for k in range(x.shape[1]):
-            x_test.iloc[:,k] -= mean[k]
-            x_test.iloc[:,k] /= std[k]
-
-        feat_list = features[F0]
-        x_test = x_test.drop(columns=features[F0])  # Remove column F0
-        ridge = SolveRidge(x, x_test, F0, feat_list, mean[F0], std[F0])
-        x_test_or[features[F0]] = ridge.y_hat_test  # Add regressed data to original data
-        final = pd.concat([final, x_test_or])
-
-    # PART 2: regressing multiple features
-    the_list = list(combinations(range(25), 2))
-    the_list.extend(list(combinations(range(25), 3)))
-    the_list.extend(list(combinations(range(25), 4)))
-    #print (list(the_list))
+    # Regression.
+    the_list = list(range(25))  # Single features
+    the_list.extend(list(combinations(range(25), 2)))  # 2 features
+    the_list.extend(list(combinations(range(25), 3)))  # 3 features
+    the_list.extend(list(combinations(range(25), 4)))  # 4 features
 
     for F0 in the_list:
-        F0 = list(F0)
-        #print('Regressing %d features' %len(F0))
 
-        (x_test_or, b) = findMultiple(data, F0, features)
+        try:
+            F0 = list(F0)  # Convert tuple to list
+
+        except:
+            F0 = [F0]  # Convert integer to list of one element
+
+        (x_test_or, b) = findPatients(data, F0, features)
 
         if b == 1:  # pruning: run the algorithm only if there are patients
             x_test = copy.deepcopy(x_test_or)
+
             for k in range(x.shape[1]):
                 x_test.iloc[:,k] -= mean[k]
                 x_test.iloc[:,k] /= std[k]
@@ -186,16 +186,17 @@ if __name__ == '__main__':
             x_test_or[feat_list] = ridge.y_hat_test
             final = pd.concat([final, x_test_or])
 
-    # Final results.
+    # Reordering and saving final results.
     final = final.sort_index()
     final = roundValues(final, categorical_features)
     with open('final_data.csv', 'w') as outfile:
-        final.to_csv(outfile)  # Test final file
+        final.to_csv(outfile)
 
     # Tree.
-    target = final.iloc[:,-1]
+    target = final['class']
     data = final.drop(columns=['class'])
     clf = tree.DecisionTreeClassifier("entropy")
     clf = clf.fit(data, target)
     dot_data = tree.export_graphviz(clf, out_file="Tree.dot",
+    feature_names=features[0:-1], class_names=features[-1],
         filled=True, rounded=True, special_characters=True)
