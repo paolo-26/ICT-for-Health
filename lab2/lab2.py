@@ -11,7 +11,7 @@ import math
 
 NC = 3
 RANDOM_STATE = 0
-F = './moles/melanoma_5.jpg'
+F = './moles/medium_risk_3.jpg'
 
 class Image(object):
 
@@ -74,30 +74,68 @@ class Image(object):
 
             center_mole = centers[d.argmin(),:]
 
+
         # 6: take a subset of the image that includes the mole
-        cond = True
-        area_old = 0
-        step = 10# each time the algorithm increases the area by 2*step pixels
-        # horizontally and vertically
         c0 = center_mole[0]
         c1 = center_mole[1]
-        im_sel = (im_clust == i_col)# im_sel is a boolean NDarray with N1 rows and N2 columns
-        im_sel = im_sel*1# im_sel is now an integer NDarray with N1 rows and N2 columns
-
+        RR, CC = im_clust.shape
+        stepmax = min([c0, RR - c0, c1, CC - c1])
+        cond = True
+        area_old = 0
+        surf_old = 1
+        step = 10  # each time the algorithm increases the area by 2*step pixels
+        # horizontally and vertically
+        # im_sel is a boolean NDarray with N1 rows and N2 columns
+        im_sel = (im_clust == i_col)
+        im_sel = im_sel * 1  # im_sel is now an integer NDarray with N1 rows and N2 columns
         while cond:
-            subset = im_sel[c0-step:c0+step+1,c1-step:c1+step+ 1]
+            subset = im_sel[c0 - step:c0 + step + 1, c1 - step:c1 + step + 1]
             area = np.sum(subset)
-
-            if area > area_old:
+            Delta = np.size(subset) - surf_old
+            surf_old = np.size(subset)
+            if area > area_old + 0.01 * Delta:
                 step = step + 10
                 area_old = area
                 cond = True
-
+                if step > stepmax:
+                    cond = False
             else:
                 cond = False
                 # subset is the serach area
-
         plt.matshow(subset)
+
+
+
+
+        # # 6: take a subset of the image that includes the mole
+        # cond = True
+        # area_old = 0
+        # step = 10# each time the algorithm increases the area by 2*step pixels
+        # # horizontally and vertically
+        # c0 = center_mole[0]
+        # c1 = center_mole[1]
+        # im_sel = (im_clust == i_col)# im_sel is a boolean NDarray with N1 rows and N2 columns
+        # im_sel = im_sel*1# im_sel is now an integer NDarray with N1 rows and N2 columns
+        #
+        # while cond:
+        #     subset = im_sel[c0-step:c0+step+1,c1-step:c1+step+ 1]
+        #     area = np.sum(subset)
+        #
+        #     if area > area_old:
+        #         step = step + 10
+        #         area_old = area
+        #         cond = True
+        #
+        #     else:
+        #         cond = False
+        #         # subset is the serach area
+        #
+        # plt.matshow(subset)
+
+
+
+
+
         self.subset = subset
 
     def cleaning(self, img, r1=2, r2=7):  # Clean isolated pixels
