@@ -1,20 +1,25 @@
 #!/usr/bin/env python3
 """
 @author = Paolo Grasso
-
-To visualize the tree: "dot -Tpdf Tree.dot -o Tree.pdf"
 """
 import pandas as pd
 import copy
 import numpy as np
 import matplotlib.pyplot as plt
 import sklearn.tree as tree
-from itertools import combinations
+import graphviz
 
 CAT_FEAT = ['rbc', 'pc', 'pcc', 'ba', 'htn',
             'dm', 'cad', 'appet', 'pe', 'ane', 'class']
 INT_FEAT = ['age', 'bp', 'bgr', 'bu', 'al', 'su', 'sod', 'pcv', 'wbcc']
 DEC_FEAT = ['pot', 'hemo', 'rbcc', 'sc']
+FEAT = ['age', 'blood pressure', 'specific gravity', 'albumin', 'sugar',
+        'red blood cells', 'pus cell', 'pus cell clumps', 'bacteria',
+        'blood glucose random', 'blood urea', 'serum creatinine', 'sodium',
+        'potassium', 'hemoglobin', 'packed cell volume',
+        'white blood cell count', 'red blood cell count', 'hypertension',
+        'diabetes mellitus', 'coronary artery disease', 'appetite',
+        'pedal edema', 'anemia', 'class']
 LAMBDA = 10
 
 def findCombinations(df):
@@ -175,9 +180,6 @@ if __name__ == '__main__':
     mean = []
     std = []
 
-    # with open('x.csv', 'w') as schifo:
-    #     x.to_csv(schifo)
-
     for k in range(x.shape[1]):
         mean.append(np.mean(x.iloc[:, k]))
         x.iloc[:, k] -= mean[-1]
@@ -219,15 +221,15 @@ if __name__ == '__main__':
     with open('final_data.csv', 'w') as outfile:
         final.to_csv(outfile)
 
-    print("features = ", features[0:-1])
-    print("class =", features[-1])
     # Generate tree.
     data = final.iloc[:, 0:24]
     target = final['class']
     clf = tree.DecisionTreeClassifier("entropy")
-    clf = clf.fit(data, target)
-    dot_data = tree.export_graphviz(clf, out_file="Tree.dot",
-                                    feature_names=features[0:-1],
-                                    class_names=features[-1],
+    clf.fit(data, target)
+    dot_data = tree.export_graphviz(clf, out_file=None,
+                                    feature_names=FEAT[0:-1],
+                                    class_names=['0','1'],
                                     filled=True, rounded=True,
                                     special_characters=True)
+    graph = graphviz.Source(dot_data)
+    graph.render("Tree")
