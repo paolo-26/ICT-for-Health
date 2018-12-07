@@ -17,13 +17,24 @@ INT_FEAT = ['age', 'bp', 'bgr', 'bu', 'al', 'su', 'sod', 'pcv', 'wbcc']
 DEC_FEAT = ['pot', 'hemo', 'rbcc', 'sc']
 LAMBDA = 10
 
+def findCombinations(df):
+    comb_list = []
+
+    for k in df.index.values:
+        nans = np.argwhere(np.isnan(df.loc[k]))
+        nans = tuple(nans.reshape(len(nans),))
+
+        if nans not in comb_list:
+            comb_list.append(nans)
+
+    return comb_list
 
 def removePatients(df, n):
     """ Remove all patients with <= n valid values
         Return the new database 'df'.
     """
     cnt = df.count(axis=1, level=None, numeric_only=False)
-    index = [k for k in df.index.values if cnt[k] <= n]
+    index = [k for k in df.index.values if cnt[k] < n]
     df = df.drop(index)
     return df
 
@@ -34,8 +45,9 @@ def selectPatients(df, n):
     """
     cnt = df.count(axis=1, level=None, numeric_only=False)
     index = [k for k in df.index.values if cnt[k] < n]
+    test = df.loc[index]
     df = df.drop(index)
-    return df
+    return (df, test)
 
 
 def findPatients(df, feat_vect, ft):
@@ -54,7 +66,7 @@ def findPatients(df, feat_vect, ft):
     index = [k for k in df.index.values if cnt[k] == df.shape[1] - L]
 
     for c in range(L):
-        index = [k for k in index if np.isnan(df.iloc[k, feat_vect[c]])]
+        index = [k for k in index if np.isnan(df.loc[k, ft[feat_vect[c]]])]
 
     df = df.loc[index]
 
@@ -107,6 +119,9 @@ class SolveRidge(object):
         self.w = w
         # print("w = \n", w, "\n")  # Utile
         self.y_hat_train = np.dot(x_train, w) * s + m
+        # print("y_test = \n",np.dot(x_test, w) * s + m, "\n")
+        #print("std = \n", s, "\n")
+        #print("mean = \n", m, "\n")
         self.y_hat_test = np.dot(x_test, w) * s + m
 
 
@@ -141,7 +156,7 @@ if __name__ == '__main__':
                        skiprows=29, na_values=['?'])
 
     data.info()
-    cat = ['present', 'notpresent', 'normal', 'abnormal',
+    cat = ['present', 'notpresent', 'abnormal', 'normal',
            'yes', 'no', 'good', 'poor', 'ckd', 'notckd']
     num = [1, 0, 1, 0, 1, 0, 1, 0, 1, 0]
     num = [float(x) for x in num]
@@ -153,12 +168,15 @@ if __name__ == '__main__':
     # Build x training with patients with full data.
     x = copy.deepcopy(data)  # Matrix with complete data
     x = removePatients(x, 20)
-    x = selectPatients(x, 25)
+    (x, test) = selectPatients(x, 25)
     final = copy.deepcopy(x)
 
     # Standardize x training.
     mean = []
     std = []
+
+    # with open('x.csv', 'w') as schifo:
+    #     x.to_csv(schifo)
 
     for k in range(x.shape[1]):
         mean.append(np.mean(x.iloc[:, k]))
@@ -167,10 +185,7 @@ if __name__ == '__main__':
         x.iloc[:, k] /= std[-1]
 
     # Regression.
-    the_list = list(range(25))  # Single features
-    the_list.extend(list(combinations(range(25), 2)))  # 2 features
-    the_list.extend(list(combinations(range(25), 3)))  # 3 features
-    the_list.extend(list(combinations(range(25), 4)))  # 4 features
+    the_list = findCombinations(test)
 
     for F0 in the_list:
 
@@ -180,7 +195,7 @@ if __name__ == '__main__':
         except:
             F0 = [F0]  # Convert integer to list of one element
 
-        (x_test_or, b) = findPatients(data, F0, features)
+        (x_test_or, b) = findPatients(test, F0, features)
 
         if b == 1:  # Pruning: run the algorithm only if there are patients
             x_test = copy.deepcopy(x_test_or)
@@ -204,9 +219,11 @@ if __name__ == '__main__':
     with open('final_data.csv', 'w') as outfile:
         final.to_csv(outfile)
 
+    print("features = ", features[0:-1])
+    print("class =", features[-1])
     # Generate tree.
+    data = final.iloc[:, 0:24]
     target = final['class']
-    data = final.drop(columns=['class'])
     clf = tree.DecisionTreeClassifier("entropy")
     clf = clf.fit(data, target)
     dot_data = tree.export_graphviz(clf, out_file="Tree.dot",
