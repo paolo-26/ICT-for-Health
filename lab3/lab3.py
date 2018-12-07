@@ -20,6 +20,11 @@ FEAT = ['age', 'blood pressure', 'specific gravity', 'albumin', 'sugar',
         'white blood cell count', 'red blood cell count', 'hypertension',
         'diabetes mellitus', 'coronary artery disease', 'appetite',
         'pedal edema', 'anemia', 'class']
+CAT = ['present', 'notpresent', 'normal', 'abnormal',
+       'yes', 'no', 'good', 'poor', 'ckd', 'notckd']
+NUM = [1, 0, 1, 0, 1, 0, 1, 0, 1, 0]
+SG = [1.005, 1.010, 1.015, 1.020, 1.025]
+SGN = [1, 2, 3, 4, 5]
 LAMBDA = 10
 
 def findCombinations(df):
@@ -90,7 +95,8 @@ def roundValues(df, cat_f, int_f, dec_f):
             df[c] = [round(x, 1) for x in df[c]]
 
         if c == 'sg':
-            df[c] = [round(x, 3) for x in df[c]]
+            df[c] = [round(x) for x in df[c]]
+            df[c] = df[c].replace(to_replace=SGN, value=SG)
 
     return df
 
@@ -150,11 +156,9 @@ if __name__ == '__main__':
                        skiprows=29, na_values=['?'])
 
     data.info()
-    cat = ['present', 'notpresent', 'abnormal', 'normal',
-           'yes', 'no', 'good', 'poor', 'ckd', 'notckd']
-    num = [1, 0, 1, 0, 1, 0, 1, 0, 1, 0]
-    num = [float(x) for x in num]
-    data = data.replace(to_replace=cat, value=num)
+    num = [float(x) for x in NUM]
+    data = data.replace(to_replace=CAT, value=NUM)
+    data = data.replace(to_replace=SG, value=SGN)
 
     with open('starting_data.csv', 'w') as outfile:
         data.to_csv(outfile)  # Save data as csv for better reading
@@ -218,6 +222,9 @@ if __name__ == '__main__':
                                     feature_names=FEAT[0:-1],
                                     class_names=['0','1'],
                                     filled=True, rounded=True,
-                                    special_characters=True)
+                                    special_characters=True,
+                                    #proportion=True,
+                                    #leaves_parallel=True,
+                                    )
     graph = graphviz.Source(dot_data)
     graph.render("Tree")#, view=True)
