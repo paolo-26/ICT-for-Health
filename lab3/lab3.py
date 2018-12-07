@@ -74,21 +74,13 @@ def findPatients(df, feat_vect, ft):
         index = [k for k in index if np.isnan(df.loc[k, ft[feat_vect[c]]])]
 
     df = df.loc[index]
-
-    if index == []:
-        b = 0  # Pruning
-
-    else:
-        print("Working on patients\t", index)
-        b = 1
-
-    return (df, b)
+    print("Working on patients\t", index)
+    return df
 
 
 def roundValues(df, cat_f, int_f, dec_f):
     """ Round the values only for categorical features.
     """
-    print("Rounding values...")
     for c in list(df):
 
         if (c in cat_f) or (c in int_f):
@@ -122,11 +114,8 @@ class SolveRidge(object):
         w = np.dot(np.dot(np.linalg.inv(
             (np.dot(x_train.T, x_train) + Lambda * I)), x_train.T), y)
         self.w = w
-        # print("w = \n", w, "\n")  # Utile
+        #print("w = \n", w, "\n")  # Utile
         self.y_hat_train = np.dot(x_train, w) * s + m
-        # print("y_test = \n",np.dot(x_test, w) * s + m, "\n")
-        #print("std = \n", s, "\n")
-        #print("mean = \n", m, "\n")
         self.y_hat_test = np.dot(x_test, w) * s + m
 
 
@@ -197,22 +186,21 @@ if __name__ == '__main__':
         except:
             F0 = [F0]  # Convert integer to list of one element
 
-        (x_test_or, b) = findPatients(test, F0, features)
+        x_test_or = findPatients(test, F0, features)
 
-        if b == 1:  # Pruning: run the algorithm only if there are patients
-            x_test = copy.deepcopy(x_test_or)
+        x_test = copy.deepcopy(x_test_or)
 
-            for k in range(x.shape[1]):
-                x_test.iloc[:, k] -= mean[k]
-                x_test.iloc[:, k] /= std[k]
+        for k in range(x.shape[1]):
+            x_test.iloc[:, k] -= mean[k]
+            x_test.iloc[:, k] /= std[k]
 
-            feat_list = [features[x] for x in F0]
-            mean_list = [mean[x] for x in F0]
-            std_list = [std[x] for x in F0]
-            x_test = x_test.drop(columns=feat_list)
-            ridge = SolveRidge(x, x_test, F0, feat_list, mean_list, std_list)
-            x_test_or[feat_list] = ridge.y_hat_test
-            final = pd.concat([final, x_test_or])
+        feat_list = [features[x] for x in F0]
+        mean_list = [mean[x] for x in F0]
+        std_list = [std[x] for x in F0]
+        x_test = x_test.drop(columns=feat_list)
+        ridge = SolveRidge(x, x_test, F0, feat_list, mean_list, std_list)
+        x_test_or[feat_list] = ridge.y_hat_test
+        final = pd.concat([final, x_test_or])
 
     # Reorder and save final results.
     final = final.sort_index()
@@ -232,4 +220,4 @@ if __name__ == '__main__':
                                     filled=True, rounded=True,
                                     special_characters=True)
     graph = graphviz.Source(dot_data)
-    graph.render("Tree")
+    graph.render("Tree")#, view=True)
