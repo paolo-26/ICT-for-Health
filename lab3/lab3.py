@@ -27,7 +27,10 @@ SG = [1.005, 1.010, 1.015, 1.020, 1.025]
 SGN = [1, 2, 3, 4, 5]
 LAMBDA = 10
 
+
 def findCombinations(df):
+    """ Find all possible combinations of missing features of a given dataset.
+    """
     comb_list = []
 
     for k in df.index.values:
@@ -38,6 +41,7 @@ def findCombinations(df):
             comb_list.append(nans)
 
     return comb_list
+
 
 def removePatients(df, n):
     """ Remove all patients with <= n valid values
@@ -66,12 +70,7 @@ def findPatients(df, feat_vect, ft):
         Return the new database 'df' and a boolean value 'b' that
         tells if some patients are found.
     """
-    try:
-        L = len(feat_vect)
-
-    except:
-        L = 1
-
+    L = len(feat_vect)
     cnt = df.count(axis=1, level=None, numeric_only=False)
     index = [k for k in df.index.values if cnt[k] == df.shape[1] - L]
 
@@ -183,15 +182,8 @@ if __name__ == '__main__':
     the_list = findCombinations(test)
 
     for F0 in the_list:
-
-        try:
-            F0 = list(F0)  # Convert tuple to list
-
-        except:
-            F0 = [F0]  # Convert integer to list of one element
-
+        F0 = list(F0)  # Convert tuple to list
         x_test_or = findPatients(test, F0, features)
-
         x_test = copy.deepcopy(x_test_or)
 
         for k in range(x.shape[1]):
@@ -227,4 +219,4 @@ if __name__ == '__main__':
                                     #leaves_parallel=True,
                                     )
     graph = graphviz.Source(dot_data)
-    graph.render("Tree")#, view=True)
+    graph.render("Tree")
