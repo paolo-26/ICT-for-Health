@@ -28,7 +28,7 @@ SGN = [1, 2, 3, 4, 5]
 LAMBDA = 10
 
 
-def findCombinations(df):
+def find_combinations(df):
     """ Find all possible combinations of missing features of a given dataset.
     """
     comb_list = []
@@ -43,8 +43,8 @@ def findCombinations(df):
     return comb_list
 
 
-def removePatients(df, n):
-    """ Remove all patients with <= n valid values
+def remove_patients(df, n):
+    """ Remove all patients with < n valid values
         Return the new database 'df'.
     """
     cnt = df.count(axis=1, level=None, numeric_only=False)
@@ -53,7 +53,7 @@ def removePatients(df, n):
     return df
 
 
-def selectPatients(df, n):
+def select_patients(df, n):
     """ Keep only the patients with at least n valid values.
         Return the new database 'df'.
     """
@@ -64,7 +64,7 @@ def selectPatients(df, n):
     return (df, test)
 
 
-def findPatients(df, feat_vect, ft):
+def find_patients(df, feat_vect, ft):
     """ Find all patients whose missing features are contained in
         the feat_vect vector.
         Return the new database 'df' and a boolean value 'b' that
@@ -82,7 +82,7 @@ def findPatients(df, feat_vect, ft):
     return df
 
 
-def roundValues(df, cat_f, int_f, dec_f):
+def round_values(df, cat_f, int_f, dec_f):
     """ Round the values only for categorical features.
     """
     for c in list(df):
@@ -164,8 +164,8 @@ if __name__ == '__main__':
 
     # Build x training with patients with full data.
     x = copy.deepcopy(data)  # Matrix with complete data
-    x = removePatients(x, 20)
-    (x, test) = selectPatients(x, 25)
+    x = remove_patients(x, 20)
+    (x, test) = select_patients(x, 25)
     final = copy.deepcopy(x)
 
     # Standardize x training.
@@ -179,11 +179,11 @@ if __name__ == '__main__':
         x.iloc[:, k] /= std[-1]
 
     # Regression.
-    the_list = findCombinations(test)
+    the_list = find_combinations(test)
 
     for F0 in the_list:
         F0 = list(F0)  # Convert tuple to list
-        x_test_or = findPatients(test, F0, features)
+        x_test_or = find_patients(test, F0, features)
         x_test = copy.deepcopy(x_test_or)
 
         for k in range(x.shape[1]):
@@ -200,7 +200,7 @@ if __name__ == '__main__':
 
     # Reorder and save final results.
     final = final.sort_index()
-    final = roundValues(final, CAT_FEAT, INT_FEAT, DEC_FEAT)
+    final = round_values(final, CAT_FEAT, INT_FEAT, DEC_FEAT)
 
     with open('final_data.csv', 'w') as outfile:
         final.to_csv(outfile)
