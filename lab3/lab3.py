@@ -207,18 +207,31 @@ if __name__ == '__main__':
     with open('final_data.csv', 'w') as outfile:
         final.to_csv(outfile)
 
+    print("")
+
     # Generate tree.
-    data = final.iloc[:, 0:24]
-    target = final['class']
-    clf = tree.DecisionTreeClassifier("entropy")
-    clf.fit(data, target)
-    dot_data = tree.export_graphviz(clf, out_file=None,
-                                    feature_names=FEAT[0:-1],
-                                    class_names=['0','1'],
-                                    filled=True, rounded=True,
-                                    special_characters=True,
-                                    #proportion=True,
-                                    #leaves_parallel=True,
-                                    )
-    graph = graphviz.Source(dot_data)
-    graph.render("Tree")
+    filetree = ["tree1", "tree2", "tree3"]
+    randstate = [1, 2, 6]
+    for o, k in enumerate(randstate):
+        data = final.iloc[:, 0:24]
+        target = final['class']
+        clf = tree.DecisionTreeClassifier("entropy", random_state=k)
+        clf = clf.fit(data, target)
+        dot_data = tree.export_graphviz(clf, out_file=None,
+                                        feature_names=FEAT[0:-1],
+                                        class_names=['nockd','ckd'],
+                                        filled=True, rounded=True,
+                                        special_characters=True,
+                                        #proportion=True,
+                                        #leaves_parallel=True,
+                                        )
+        print("Features importance for random_state = %d:" %k)
+        f = list(zip(features, clf.feature_importances_))
+
+        for x in f:
+            print(str(x)[1:-1])
+
+        print("")
+
+        graph = graphviz.Source(dot_data)
+        graph.render(filetree[o])
