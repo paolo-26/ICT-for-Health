@@ -5,7 +5,6 @@
 import pandas as pd
 import copy
 import numpy as np
-import matplotlib.pyplot as plt
 import sklearn.tree as tree
 import graphviz
 
@@ -24,7 +23,7 @@ CAT = ['present', 'notpresent', 'normal', 'abnormal',
        'yes', 'no', 'good', 'poor', 'ckd', 'notckd']
 NUM = [1, 0, 1, 0, 1, 0, 1, 0, 1, 0]
 SG = [1.005, 1.010, 1.015, 1.020, 1.025]
-SGN = [1, 2, 3, 4, 5]
+SGN = [0, 1, 2, 3, 4]
 LAMBDA = 10
 
 
@@ -96,6 +95,9 @@ def round_values(df, cat_f, int_f, dec_f):
         if c == 'sg':
             df[c] = [round(x) for x in df[c]]
             df[c] = df[c].replace(to_replace=SGN, value=SG)
+
+        if c == 'wbcc':
+            df[c] = [round(x/100)*100 for x in df[c]]
 
     return df
 
