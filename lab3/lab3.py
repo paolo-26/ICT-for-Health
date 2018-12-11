@@ -8,10 +8,17 @@ import numpy as np
 import sklearn.tree as tree
 import graphviz
 
+# Categorical features
 CAT_FEAT = ['rbc', 'pc', 'pcc', 'ba', 'htn',
             'dm', 'cad', 'appet', 'pe', 'ane', 'class']
+
+# Numerical (int) features
 INT_FEAT = ['age', 'bp', 'bgr', 'bu', 'al', 'su', 'sod', 'pcv', 'wbcc']
+
+# Numerical (decimal) features
 DEC_FEAT = ['pot', 'hemo', 'rbcc', 'sc']
+
+# Feature list with complete names
 FEAT = ['age', 'blood pressure', 'specific gravity', 'albumin', 'sugar',
         'red blood cells', 'pus cell', 'pus cell clumps', 'bacteria',
         'blood glucose random', 'blood urea', 'serum creatinine', 'sodium',
@@ -19,16 +26,20 @@ FEAT = ['age', 'blood pressure', 'specific gravity', 'albumin', 'sugar',
         'white blood cell count', 'red blood cell count', 'hypertension',
         'diabetes mellitus', 'coronary artery disease', 'appetite',
         'pedal edema', 'anemia', 'class']
+
+# Replace values
 CAT = ['present', 'notpresent', 'normal', 'abnormal',
        'yes', 'no', 'good', 'poor', 'ckd', 'notckd']
 NUM = [1, 0, 1, 0, 1, 0, 1, 0, 1, 0]
 SG = [1.005, 1.010, 1.015, 1.020, 1.025]
 SGN = [0, 1, 2, 3, 4]
+
 LAMBDA = 10
 
 
 def find_combinations(df):
     """ Find all possible combinations of missing features of a given dataset.
+        Return a list of tuples.
     """
     comb_list = []
 
@@ -54,7 +65,8 @@ def remove_patients(df, n):
 
 def select_patients(df, n):
     """ Keep only the patients with at least n valid values.
-        Return the new database 'df'.
+        Return the new database with only valid data.
+        Return the test database with missing values.
     """
     cnt = df.count(axis=1, level=None, numeric_only=False)
     index = [k for k in df.index.values if cnt[k] < n]
@@ -66,8 +78,7 @@ def select_patients(df, n):
 def find_patients(df, feat_vect, ft):
     """ Find all patients whose missing features are contained in
         the feat_vect vector.
-        Return the new database 'df' and a boolean value 'b' that
-        tells if some patients are found.
+        Return the new database 'df'.
     """
     L = len(feat_vect)
     cnt = df.count(axis=1, level=None, numeric_only=False)
@@ -82,7 +93,7 @@ def find_patients(df, feat_vect, ft):
 
 
 def round_values(df, cat_f, int_f, dec_f):
-    """ Round the values only for categorical features.
+    """ Round the values for categorical and int features.
     """
     for c in list(df):
 
@@ -152,11 +163,12 @@ if __name__ == '__main__':
     with open('dataset.arff', 'w') as out:
         out.write(data)  # Save the cleaned dataset
 
-    # Import cleaned dataframe.
+    # Import cleaned dataset into a dataframe.
     data = pd.read_csv('dataset.arff', header=None, names=features, sep=',',
                        skiprows=29, na_values=['?'])
-
     data.info()
+
+    # Replace categorical names with numbers.
     num = [float(x) for x in NUM]
     data = data.replace(to_replace=CAT, value=NUM)
     data = data.replace(to_replace=SG, value=SGN)
@@ -183,11 +195,12 @@ if __name__ == '__main__':
     # Regression.
     the_list = find_combinations(test)
 
-    for F0 in the_list:
+    for F0 in the_list:  # For every combination
         F0 = list(F0)  # Convert tuple to list
         x_test_or = find_patients(test, F0, features)
         x_test = copy.deepcopy(x_test_or)
 
+        # Standardize the test matrix.
         for k in range(x.shape[1]):
             x_test.iloc[:, k] -= mean[k]
             x_test.iloc[:, k] /= std[k]
@@ -197,8 +210,8 @@ if __name__ == '__main__':
         std_list = [std[x] for x in F0]
         x_test = x_test.drop(columns=feat_list)
         ridge = SolveRidge(x, x_test, F0, feat_list, mean_list, std_list)
-        x_test_or[feat_list] = ridge.y_hat_test
-        final = pd.concat([final, x_test_or])
+        x_test_or[feat_list] = ridge.y_hat_test  # Save new values
+        final = pd.concat([final, x_test_or])  # Add patients to final dataset
 
     # Reorder and save final results.
     final = final.sort_index()
@@ -232,6 +245,5 @@ if __name__ == '__main__':
             print(str(x)[1:-1])
 
         print("")
-
         graph = graphviz.Source(dot_data)
         graph.render(filetree[o])
