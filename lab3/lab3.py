@@ -232,7 +232,7 @@ if __name__ == '__main__':
         clf = clf.fit(data, target)
         dot_data = tree.export_graphviz(clf, out_file=None,
                                         feature_names=FEAT[0:-1],
-                                        class_names=['nockd','ckd'],
+                                        class_names=['not ckd','ckd'],
                                         filled=True, rounded=True,
                                         special_characters=True,
                                         #proportion=True,
