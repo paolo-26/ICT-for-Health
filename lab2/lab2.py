@@ -11,7 +11,7 @@ import math
 
 NC = 3
 RANDOM_STATE = 0
-F = './moles/low_risk_4.jpg'
+F = './moles/melanoma_4.jpg'
 
 class Image(object):
 
@@ -251,6 +251,29 @@ class Image(object):
 
         return img
 
+    def fill_holes(self, img):
+        flag = 0
+        dim = img.shape[0]-1
+        for r in range(1, dim):
+            start = 0
+            stop = 0
+            for c in range(15, round(dim)):
+                v = [img[r][x] for x in range(c-15,c)]
+                if img[r][c] == 0 and np.sum(v) == len(v):
+                    start = c
+                    break
+            if start != 0:
+                for c in range(start, dim):
+                    if img[r][c] == 1:
+                        stop  = c
+                        break
+            if stop != 0:
+                # print('row: %d    %d - %d' %(r, start, stop))
+                for c in range(start, stop):
+                    img[r][c] = 1
+
+        return img
+
     def fill_v(self,img):
         flag = 0
         dim = img.shape[0]-1
@@ -276,20 +299,27 @@ class Image(object):
     def polish(self):
         sub = self.subset
 
+        print("- step 1...")
         for k in range(4):
             sub = self.cleaning(sub)
 
+        print("- step 2...")
         for k in range(1):
             sub = self.cleaning(sub)#, r1=3)
             sub = self.clean_in(sub)
             sub = self.clean_out(sub)
 
+        print("- step 3...")
         sub = self.cleaning(sub, r1=4)
-        sub = self.fill_h(sub)
+        # sub = self.fill_h(sub)
+        print("- step 4...")
         sub = self.clean_out(sub, r1=5)   # final cleaning
+        print("- step 5...")
+        sub = self.fill_holes(sub)
+        sub = self.fill_holes(sub)
         self.im_area = copy.deepcopy(sub)
-        plt.matshow(self.im_area)
-        plt.title('Area')
+        # plt.matshow(self.im_area)
+        # plt.title('Area')
 
         inside = copy.deepcopy(self.im_area)
 
@@ -309,11 +339,15 @@ class Image(object):
         contour = (inside != self.im_area)
         contour = contour*1
 
-        plt.matshow(contour)
-        plt.title('Perimeter')
+        # plt.matshow(contour)
+        # plt.title('Perimeter')
+        processed_image = (contour+self.im_area)**2
+        plt.matshow(processed_image)
+        plt.title('Processed')
 
-        self.area = np.sum(self.im_area)
         self.perimeter = np.sum(contour)
+        self.area = np.sum(self.im_area)-self.perimeter
+
         self.circle_perimeter = 2 * math.pi * math.sqrt(self.area/math.pi)
 
     def info(self):
