@@ -11,7 +11,7 @@ import math
 
 NC = 3
 RANDOM_STATE = 0
-F = './moles/medium_risk_3.jpg'
+F = './moles/low_risk_4.jpg'
 
 class Image(object):
 
@@ -101,7 +101,7 @@ class Image(object):
                     cond = False
             else:
                 cond = False
-                # subset is the serach area
+                # subset is the search area
         plt.matshow(subset)
 
 
@@ -286,6 +286,7 @@ class Image(object):
 
         sub = self.cleaning(sub, r1=4)
         sub = self.fill_h(sub)
+        sub = self.clean_out(sub, r1=5)   # final cleaning
         self.im_area = copy.deepcopy(sub)
         plt.matshow(self.im_area)
         plt.title('Area')
