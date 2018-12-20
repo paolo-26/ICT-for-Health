@@ -8,10 +8,26 @@ import numpy as np
 from sklearn.cluster import KMeans
 import copy
 import math
+import pandas as pd
 
 NC = 3
 RANDOM_STATE = 0
-F = './moles/melanoma_4.jpg'
+filename = 'melanoma_23'
+F = './moles/'+filename+'.jpg'
+
+class Results(object):
+    def __init__(self, filename):
+        self.data = pd.read_csv('results.csv', index_col=0)
+        print(self.data)
+
+    def add(self, name, area, perimeter, ratio):
+        try:
+            self.data.loc[name] = [area, perimeter, round(ratio, 6)]
+        except:
+            print("Error")
+        self.data = self.data.sort_index()
+        with open('results.csv', 'w') as f:
+            self.data.to_csv(f)
 
 class Image(object):
 
@@ -22,6 +38,11 @@ class Image(object):
         self.find_shape()
         #self.prints()
         self.polish()
+
+    def save_to_file(self):
+        plt.matshow(self.processed_image)
+        #plt.title(self.filename.replace('.jpg', ''))
+        plt.savefig(self.filename.replace('.jpg', '.png'))
 
     def quantize(self):
         im_2D = convert_to_2D(self.im)
@@ -254,23 +275,34 @@ class Image(object):
     def fill_holes(self, img):
         flag = 0
         dim = img.shape[0]-1
+        par = round(dim/5)
         for r in range(1, dim):
             start = 0
             stop = 0
-            for c in range(15, round(dim)):
-                v = [img[r][x] for x in range(c-15,c)]
+            for c in range(par, round(dim)):
+                v = [img[r][x] for x in range(c-par,c)]
                 if img[r][c] == 0 and np.sum(v) == len(v):
                     start = c
                     break
             if start != 0:
                 for c in range(start, dim):
                     if img[r][c] == 1:
-                        stop  = c
-                        break
-            if stop != 0:
-                # print('row: %d    %d - %d' %(r, start, stop))
-                for c in range(start, stop):
-                    img[r][c] = 1
+                        stop = c
+                        try:
+                            w = [img[r][x] for x in range(stop, stop+par)]
+                            if np.sum(w) >= len(w)-2:
+                                for c in range(start, stop):
+                                    img[r][c] = 1
+                                break
+                            else:
+                                stop = 0
+                            # break
+                        except:
+                            pass
+            #if stop != 0:
+                #print('row: %d    %d - %d' %(r, start, stop))
+                #print(v, w)
+
 
         return img
 
@@ -299,24 +331,34 @@ class Image(object):
     def polish(self):
         sub = self.subset
 
-        print("- step 1...")
-        for k in range(4):
-            sub = self.cleaning(sub)
+        #print("- step 1...")
+        #for k in range(4):
+        #    sub = self.cleaning(sub)
 
-        print("- step 2...")
+
+
+        # print("- Cleaning inside...")
         for k in range(1):
-            sub = self.cleaning(sub)#, r1=3)
+            #sub = self.cleaning(sub)#, r1=3)
+            print("- Cleaning inside...")
             sub = self.clean_in(sub)
+            print("- Cleaning outside...")
             sub = self.clean_out(sub)
 
-        print("- step 3...")
-        sub = self.cleaning(sub, r1=4)
+
+        print("- Filling holes...")
+        #sub = self.fill_h(sub)
+        sub = self.fill_holes(sub)
+
+        #print("- step 3...")
+        # sub = self.cleaning(sub, r1=4)
         # sub = self.fill_h(sub)
-        print("- step 4...")
+        print("- Cleaning outside...")
         sub = self.clean_out(sub, r1=5)   # final cleaning
-        print("- step 5...")
         sub = self.fill_holes(sub)
-        sub = self.fill_holes(sub)
+        #print("- step 5...")
+        #sub = self.fill_holes(sub)
+        #sub = self.fill_holes(sub)
         self.im_area = copy.deepcopy(sub)
         # plt.matshow(self.im_area)
         # plt.title('Area')
@@ -341,8 +383,8 @@ class Image(object):
 
         # plt.matshow(contour)
         # plt.title('Perimeter')
-        processed_image = (contour+self.im_area)**2
-        plt.matshow(processed_image)
+        self.processed_image = (contour+self.im_area)**2
+        plt.matshow(self.processed_image)
         plt.title('Processed')
 
         self.perimeter = np.sum(contour)
@@ -350,13 +392,14 @@ class Image(object):
 
         self.circle_perimeter = 2 * math.pi * math.sqrt(self.area/math.pi)
 
+
     def info(self):
         print("Filename: %s" % self.filename)
         print("Area: %d" % self.area)
         print("Perimeter: %d" % self.perimeter)
         print("Circle perimeter: %.2f" % self.circle_perimeter)
-        ratio = (self.perimeter/self.circle_perimeter)
-        print("Ratio = %.2f" % ratio)
+        self.ratio = (self.perimeter/self.circle_perimeter)
+        print("Ratio = %.2f" % self.ratio)
 
     def prints(self):
         print_image(self.im, 'Original')
@@ -375,7 +418,11 @@ def print_image(img,title=None):
 
 
 if __name__ == '__main__':
+    c = Results('results.csv')
     imag = Image(F)
     imag.info()
     plt.show()
+    imag.save_to_file()
+
+    c.add(filename, imag.area, imag.perimeter, imag.ratio)
     print(' --- END --- ')
