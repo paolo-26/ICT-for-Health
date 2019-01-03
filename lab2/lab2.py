@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 @author = Paolo Grasso
 """
@@ -17,9 +18,10 @@ F = './moles/'+filename+'.jpg'
 
 
 class Image(object):
-
+    """ Image class with all algorithms and data
+    """
     def __init__(self, filename):
-        """ Auto-run the whole code
+        """ Auto-run the whole code.
         """
         self.filename = filename
         self.im = mpimg.imread(filename)  # Original image
@@ -28,13 +30,13 @@ class Image(object):
         self.polish()
 
     def save_to_file(self):
-        """ Save processed image
+        """ Save processed image.
         """
         plt.matshow(self.processed_image)
         plt.savefig(self.filename.replace('.jpg', '.png'))
 
     def solve_k_means(self):
-        """ Apply k-means clustering
+        """ Apply k-means clustering.
         """
         im_2D = convert_to_2D(self.im)
         im_2D_quant = copy.deepcopy(im_2D)  # A copy of 2D image
@@ -53,12 +55,12 @@ class Image(object):
 
     def centre_image(self):
         """ Find the center of the mole and reshape the image
-            to a 2-color version
+            to a 2-color version.
         """
         # Find the color with minimum value of R+G+B.
-        # Note that [0 0 0] is black and [255 255 255] is black.
+        # Note that [0 0 0] is black and [255 255 255] is white.
         sc = np.sum(self.centroids, axis=1)  # Sum of RGB values
-        i_col = sc.argmin()  # Color with minimum brightness
+        i_col = sc.argmin()  # Color with minimum "brightness"
 
         N1, N2, N3 = self.im.shape
         im_clust = self.kmeans.labels_.reshape(N1, N2)
@@ -72,14 +74,14 @@ class Image(object):
             print("Try to change cluster number")
 
         if N_spots == 1:
-            center_mole = np.median(zpos,axis=0).astype(int)
+            center_mole = np.median(zpos, axis=0).astype(int)
 
         else:
-            # use K-means to get the N_spots clusters of zpos
+            # Use k-means to get the N_spots clusters of zpos.
             kmeans2 = KMeans(n_clusters=N_spots, random_state=RANDOM_STATE)
             kmeans2.fit(zpos)
             centers = kmeans2.cluster_centers_.astype(int)
-            # the mole is in the middle of the picture:
+            # The mole is in the middle of the picture:
             center_image = np.array([N1//2, N2//2])
             center_image.shape = (1, 2)
             d = np.zeros((N_spots, 1))
@@ -97,13 +99,13 @@ class Image(object):
         cond = True
         area_old = 0
         surf_old = 1
-        step = 10  # each time the algorithm increases the area by 2*step pixels
-        # horizontally and vertically
-        # im_sel is a boolean NDarray with N1 rows and N2 columns
+        step = 10  # Each time the algorithm increases the area by 2*step pixels
+        # Horizontally and vertically.
+        # im_sel is a boolean NDarray with N1 rows and N2 columns.
         im_sel = (im_clust == i_col)
-        im_sel = im_sel * 1  # im_sel is now an integer NDarray with N1 rows and N2 columns
+        im_sel = im_sel * 1  # im_sel is now an integer NDarray with N1 rows and N2 columns.
         while cond:
-            subset = im_sel[c0 - step:c0 + step + 1, c1 - step:c1 + step + 1]
+            subset = im_sel[c0-step:c0+step+1, c1-step:c1+step+1]
             area = np.sum(subset)
             Delta = np.size(subset) - surf_old
             surf_old = np.size(subset)
@@ -115,10 +117,8 @@ class Image(object):
                     cond = False
             else:
                 cond = False
-                # subset is the search area
-        print_image(subset,'2 colours')
-        # if filename == 'low_risk_1' or filename == 'melanoma_23':
-        #     plt.savefig('grainy.pdf')
+        # Subset is the search area.
+        print_image(subset, '2 colours')
         self.subset = subset
 
     def clean_in(self, img, r1=4):  # Clean from outside to inside
@@ -131,31 +131,31 @@ class Image(object):
         for r in range(2, round(dim/2)):
             for c in range(2, round(dim/2)):
                 mini = [[cleared[x][y] for x in range(r-1, r+2)]
-                                       for y in range (c-1, c+2)]
+                                       for y in range(c-1, c+2)]
                 if cleared[r][c] == 0:
                     if np.sum(mini) >= r1:
                         cleared[r][c] = 1
 
         for r in range(2, round(dim/2)):
-            for c in range(round(dim/2), dim-1)[::-1]:
+            for c in range(round(dim/2), dim-1)[::-1]:  # Reverse order
                 mini = [[cleared[x][y] for x in range(r-1, r+2)]
-                                       for y in range (c-1, c+2)]
+                                       for y in range(c-1, c+2)]
                 if cleared[r][c] == 0:
                     if np.sum(mini) >= r1:
                         cleared[r][c] = 1
 
-        for r in range(round(dim/2), dim-1)[::-1]:
-            for c in range(round(dim/2), dim-1)[::-1]:
+        for r in range(round(dim/2), dim-1)[::-1]:  # Reverse order
+            for c in range(round(dim/2), dim-1)[::-1]:  # Reverse order
                 mini = [[cleared[x][y] for x in range(r-1, r+2)]
-                                       for y in range (c-1, c+2)]
+                                       for y in range(c-1, c+2)]
                 if cleared[r][c] == 0:
                     if np.sum(mini) >= r1:
                         cleared[r][c] = 1
 
-        for r in range(round(dim/2), dim-1)[::-1]:
+        for r in range(round(dim/2), dim-1)[::-1]:  # Reverse order
             for c in range(2, round(dim/2)):
                 mini = [[cleared[x][y] for x in range(r-1, r+2)]
-                                       for y in range (c-1, c+2)]
+                                       for y in range(c-1, c+2)]
                 if cleared[r][c] == 0:
                     if np.sum(mini) >= r1:
                         cleared[r][c] = 1
@@ -169,18 +169,18 @@ class Image(object):
         """
         dim = self.subset.shape[0]
         cleared = copy.deepcopy(img)
-        for r in range(2, round(dim/2))[::-1]:
-            for c in range(2, round(dim/2))[::-1]:
+        for r in range(2, round(dim/2))[::-1]:  # Reverse order
+            for c in range(2, round(dim/2))[::-1]:  # Reverse order
                 mini = [[cleared[x][y] for x in range(r-1, r+2)]
-                                       for y in range (c-1, c+2)]
+                                       for y in range(c-1, c+2)]
                 if cleared[r][c] == 1:
                     if np.sum(mini) <= r1:
                         cleared[r][c] = 0
 
-        for r in range(2, round(dim/2))[::-1]:
+        for r in range(2, round(dim/2))[::-1]:  # Reverse order
             for c in range(round(dim/2), dim-1):
                 mini = [[cleared[x][y] for x in range(r-1, r+2)]
-                                       for y in range (c-1, c+2)]
+                                       for y in range(c-1, c+2)]
                 if cleared[r][c] == 1:
                     if np.sum(mini) <= r1:
                         cleared[r][c] = 0
@@ -188,15 +188,15 @@ class Image(object):
         for r in range(round(dim/2), dim-1):
             for c in range(round(dim/2), dim-1):
                 mini = [[cleared[x][y] for x in range(r-1, r+2)]
-                                       for y in range (c-1, c+2)]
+                                       for y in range(c-1, c+2)]
                 if cleared[r][c] == 1:
                     if np.sum(mini) <= r1:
                         cleared[r][c] = 0
 
         for r in range(round(dim/2), dim-1):
-            for c in range(2, round(dim/2))[::-1]:
+            for c in range(2, round(dim/2))[::-1]:  # Reverse order
                 mini = [[cleared[x][y] for x in range(r-1, r+2)]
-                                       for y in range (c-1, c+2)]
+                                       for y in range(c-1, c+2)]
                 if cleared[r][c] == 1:
                     if np.sum(mini) <= r1:
                         cleared[r][c] = 0
@@ -262,6 +262,7 @@ class Image(object):
         self.im_area = copy.deepcopy(sub)  # Area image
         inside = copy.deepcopy(self.im_area)
 
+        # Find the perimeter with a cross mask.
         for r in range(2, self.subset.shape[0]-1):
             for c in range(2, self.subset.shape[1]-1):
                 if ((sub[r-1][c] == 1) and (sub[r+1][c] == 1) and
@@ -276,22 +277,20 @@ class Image(object):
         contour = contour*1  # Contour image
         print_image(contour, 'Perimeter')
         self.processed_image = (contour+self.im_area)**2  # Contour+area image
-        print_image(self.processed_image, 'Processed')
-        # if filename == 'medium_risk_10' or filename == 'melanoma_23':
-        #     plt.savefig('processed3.pdf')
+        print_image(self.processed_image, 'Processed', colourmap="viridis")
         self.perimeter = np.sum(contour)  # Perimeter
-        self.area = np.sum(self.im_area)-self.perimeter  # Area
+        self.area = np.sum(self.im_area) - self.perimeter  # Area
         self.circle_perimeter = 2 * math.pi * math.sqrt(self.area/math.pi)
 
 
     def info(self):
-        """ Print results
+        """ Print results.
         """
         print("Filename: %s" % self.filename)
         print("Area: %d" % self.area)
         print("Perimeter: %d" % self.perimeter)
         print("Circle perimeter: %.2f" % self.circle_perimeter)
-        self.ratio = (self.perimeter/self.circle_perimeter)
+        self.ratio = self.perimeter/self.circle_perimeter
         print("Ratio = %.2f" % self.ratio)
 
     def prints(self):
@@ -299,7 +298,7 @@ class Image(object):
 
 
 class Results(object):
-    """ Load and save results on a csv file
+    """ Load and save results on a csv file.
     """
     def __init__(self, filename):
         self.data = pd.read_csv('results.csv', index_col=0)
@@ -320,16 +319,19 @@ def convert_to_2D(img):
     N1, N2, N3 = img.shape
     return img.reshape((N1*N2, N3))
 
+
 def convert_to_3D(img, N1, N2, N3):
     return img.reshape((N1, N2, N3))
 
-def print_image(img,title=None):
-    """ Print matrix images with title
+
+def print_image(img,title=None, colourmap="Greys"):
+    """ Print matrix images with title.
     """
     plt.figure()
-    plt.imshow(img, cmap="Greys")
+    plt.imshow(img, cmap=colourmap)
     plt.title(title)
     plt.savefig(title+'.pdf')
+
 
 def main():
     c = Results('results.csv')
@@ -339,6 +341,7 @@ def main():
     imag.save_to_file()
     c.add(filename, imag.area, imag.perimeter, imag.ratio)
     print('\n --- END --- ')
+
 
 if __name__ == '__main__':
     main()
