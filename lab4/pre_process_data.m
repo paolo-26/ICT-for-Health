@@ -18,7 +18,7 @@ function [hq, pq] = pre_process_data(Nstates, Kquant, ktrain)
 FS = 8000;  % Sampling rate in the original files
 NN = 2*FS;  % 2 seconds of speech selected in the center part of the recorded signal
 Nout = 200*Nstates;  % Samples stored in the files for subsequent processing
-K = 10;  Nnumber of healthy speakers = number of speakers affected by PD
+K = 10;  %Nnumber of healthy speakers = number of speakers affected by PD
 listh = {'H000a1','H001a1','H002a1','H003a1','H004a1',
          'H005a1','H006a1','H007a1','H008a1','H009a1'};
 listp = {'P000a1','P001a1','P002a1','P003a1','P004a1',
@@ -27,11 +27,11 @@ listp = {'P000a1','P001a1','P002a1','P003a1','P004a1',
 h = zeros(Nout, K);
 p = h;
 for k = 1 : K
-    FILENAME = ['./data/healthy/', listh{k}, '.wav']
+    FILENAME = ['/data/healthy/', listh{k}, '.wav']
     [h_in, FS] = audioread(FILENAME);
     h_res = gen_resampled_data(h_in, FS, Nstates, NN, Nout);
     h(:, k) = h_res;
-    FILENAME = ['./data/parkins/',listp{k},'.wav']
+    FILENAME = ['/data/parkins/',listp{k},'.wav']
     [p_in, FS] = audioread(FILENAME);
     p_res = gen_resampled_data(p_in, FS, Nstates, NN, Nout);
     p(:, k) = p_res;
@@ -75,19 +75,19 @@ x = x / s;  % normalized signal
 f = [0:NN-1] / NN*fs;
 X = abs(fft(x)); X=X(1:NN/2);  % take only the first half samples of the FFT
 Fmin = 100;  % at least 100 Hz between two adjacent peaks
-[PKSa,LOCSa] = findpeaks(X, NN/fs, 'MinPeakDistance',Fmin,
+[PKSa, LOCSa] = findpeaks(X, NN/fs, 'MinPeakDistance',Fmin,...
                                    'MinPeakProminence',200);
 f0 = LOCSa(1)  %fundamental frequency
 % Find the peaks of x in the time domain at minimum distance 0.9/f0.
 t = [0:NN-1] / fs;
-[PKSa,LOCSa] = findpeaks(x, fs, 'MinPeakDistance',0.9/f0);
+[PKSa, LOCSa] = findpeaks(x, fs, 'MinPeakDistance',0.9/f0);
 % take Nstates smples between two adjacent peaks
 tt = zeros((length(LOCSa)-1)*Nstates, 1);% new time axis
-v = [0:Nstates-1]/Nstates;%evenly distributed Nstates values between 0 and 1
+v = [0:Nstates - 1] / Nstates;  %Evenly distributed Nstates values between 0 and 1
 for jj = 2:length(LOCSa)
     tt((jj-2)*Nstates+1:(jj-1)*Nstates) = v*(LOCSa(jj)-LOCSa(jj-1))+LOCSa(jj-1);
 end
-x1 = interp1(t, x, tt);% resample signal x at the time instants defined by tt
+x1 = interp1(t, x, tt);  % Resample signal x at the time instants defined by tt
 % take only Nout samples
 x1 = x1(1:Nout);
 % normalize again
