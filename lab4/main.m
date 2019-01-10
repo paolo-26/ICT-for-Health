@@ -1,4 +1,5 @@
 clear all; close all; clc
+format short;
 
 rng('default');
 tstart = tic;
@@ -12,6 +13,20 @@ telapsed = toc(tstart);
 disp(['first part, elapsed time ', num2str(telapsed), ' s'])
 %% HMM training phase....
 
-plot([hq{1}])
+transGuess = rand(8,8);
+s = sum(transGuess(:,:)');
+for k = 1:8
+    transGuess(k,:) = transGuess(k,:)/s(k);
+end
+
+emisGuess = rand(8,8);
+s = sum(emisGuess(:,:)');
+for k = 1:8
+    emisGuess(k,:) = emisGuess(k,:)/s(k);
+end
+
+
+[trans, emis] = hmmtrain(hq(ktrain), transGuess, emisGuess);
+
 
 %% HMM testing phase....
