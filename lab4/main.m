@@ -45,8 +45,9 @@ end
                            'tolerance', TOL,...
                            'maxiterations', MAX_ITER);
 figure(1)
-pcolor(transH); colorbar
-axis square; title({'Transition matrix', 'Healthy patients'})
+heatmap(transH); colorbar
+%axis square;
+title({'Transition matrix', 'Healthy patients'})
 xlabel('state'); ylabel('state')
 
 % figure(2)
@@ -55,8 +56,9 @@ xlabel('state'); ylabel('state')
 % xlabel('state'); ylabel('state')
 
 figure(2)
-pcolor(transP); colorbar
-axis square; title({'Transition matrix', 'Ill patients'})
+heatmap(transP); colorbar
+%axis square;
+title({'Transition matrix', 'Ill patients'})
 xlabel('state'); ylabel('state')
 
 % figure(4)
@@ -127,8 +129,9 @@ end
                            'tolerance', TOL,...
                            'maxiterations', MAX_ITER);
 figure(3)
-pcolor(transH); colorbar
-axis square; title({'Transition matrix', 'Healthy patients'})
+heatmap(transH); colorbar
+%axis square;
+title({'Transition matrix', 'Healthy patients'})
 xlabel('state'); ylabel('state')
 
 % figure(2)
@@ -137,8 +140,9 @@ xlabel('state'); ylabel('state')
 % xlabel('state'); ylabel('state')
 
 figure(4)
-pcolor(transP); colorbar
-axis square; title({'Transition matrix', 'Ill patients'})
+heatmap(transP); colorbar
+%axis square;
+title({'Transition matrix', 'Ill patients'})
 xlabel('state'); ylabel('state')
 
 % figure(4)
