@@ -25,7 +25,7 @@ for iRow = 1:nStates
     transGuess(iRow,:) = transGuess(iRow,:) / s(iRow);
 end
 
-emisGuess = rand(nStates,nStates);
+emisGuess = rand(nStates,nQuant);
 % Normalize rows
 s = sum(emisGuess, 2);
 for iRow = 1:nStates
@@ -47,7 +47,9 @@ end
 figure(1)
 heatmap(transH); colorbar
 %axis square;
-title({'Transition matrix', 'Healthy patients'})
+title({'Transition matrix - Healthy',...
+      ['nQuant = ' , num2str(nQuant),...
+      '; nStates = ' , num2str(nStates)]})
 xlabel('state'); ylabel('state')
 
 % figure(2)
@@ -58,7 +60,9 @@ xlabel('state'); ylabel('state')
 figure(2)
 heatmap(transP); colorbar
 %axis square;
-title({'Transition matrix', 'Ill patients'})
+title({'Transition matrix - Parikinson''s disease',...
+      ['nQuant = ' , num2str(nQuant),...
+      '; nStates = ' , num2str(nStates)]})
 xlabel('state'); ylabel('state')
 
 % figure(4)
@@ -131,7 +135,9 @@ end
 figure(3)
 heatmap(transH); colorbar
 %axis square;
-title({'Transition matrix', 'Healthy patients'})
+title({'Transition matrix - Healthy',...
+      ['nQuant = ' , num2str(nQuant),...
+      '; nStates = ' , num2str(nStates)]})
 xlabel('state'); ylabel('state')
 
 % figure(2)
@@ -142,7 +148,9 @@ xlabel('state'); ylabel('state')
 figure(4)
 heatmap(transP); colorbar
 %axis square;
-title({'Transition matrix', 'Ill patients'})
+title({'Transition matrix - Parikinson''s disease',...
+      ['nQuant = ' , num2str(nQuant),...
+      '; nStates = ' , num2str(nStates)]})
 xlabel('state'); ylabel('state')
 
 % figure(4)
