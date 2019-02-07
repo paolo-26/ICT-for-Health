@@ -3,12 +3,24 @@ format short;
 
 rng('default');
 tStart = tic;
+
+comb = 1;  % Choose from [1 2 3]
 nQuant = 8;  % Number of quantization levels
 nStates = 8;  % Number of states in the HMM
-kTrain = [1, 2, 3, 4, 5, 6, 7];  % Indexes of patients for training
-kTest = [8, 9, 10];  % Indexes of patients for testing
-[hq, pq] = pre_process_data(nStates, nQuant, kTrain);  % Generate the...
-                                                       % quantized signals
+
+% Indexes of patients for training.
+kTrainT = [1 2 3 4 5 6 7; 4 5 6 7 8 9 10; 1 2 3 4 8 9 10];
+
+% Indexes of patients for testing.
+kTestT = [8 9 10; 1 2 3; 5 6 7];
+
+% Select set depennding on combination.
+kTrain = kTrainT(comb,:);
+kTest = kTestT(comb,:);
+
+% Generate the quantized signals.
+[hq, pq] = pre_process_data(nStates, nQuant, kTrain);
+
 tElapsed = toc(tStart);
 disp(['first part, elapsed time ', num2str(tElapsed), ' s'])
 
@@ -33,6 +45,7 @@ for iRow = 1:nStates
 end
 %emisGuess = 1/8*ones(8,8);
 
+tempo1 = tic;
 % Health machine training
 [transH, emisH] = hmmtrain(hq(kTrain), transGuess, emisGuess,...
                            'algorithm', ALG,...
@@ -44,27 +57,27 @@ end
                            'algorithm', ALG,...
                            'tolerance', TOL,...
                            'maxiterations', MAX_ITER);
-figure(1)
-heatmap(transH); colorbar
-%axis square;
-title({'Transition matrix - Healthy',...
-      ['nQuant = ' , num2str(nQuant),...
-      '; nStates = ' , num2str(nStates)]})
-xlabel('state'); ylabel('state')
-
+% figure(1)
+% heatmap(transH); colorbar
+% %axis square;
+% title({'Transition matrix - Healthy',...
+%       ['nQuant = ' , num2str(nQuant),...
+%       '; nStates = ' , num2str(nStates)]})
+% xlabel('state'); ylabel('state')
+%
 % figure(2)
 % pcolor(emisH); colorbar
 % axis square; title({'Emission matrix (training)', 'Healthy patients'})
 % xlabel('state'); ylabel('state')
-
-figure(2)
-heatmap(transP); colorbar
-%axis square;
-title({'Transition matrix - Parikinson''s disease',...
-      ['nQuant = ' , num2str(nQuant),...
-      '; nStates = ' , num2str(nStates)]})
-xlabel('state'); ylabel('state')
-
+% 
+% figure(2)
+% heatmap(transP); colorbar
+% %axis square;
+% title({'Transition matrix - Parikinson''s disease',...
+%       ['nQuant = ' , num2str(nQuant),...
+%       '; nStates = ' , num2str(nStates)]})
+% xlabel('state'); ylabel('state')
+%
 % figure(4)
 % pcolor(emisP); colorbar
 % axis square; title({'Emission matrix (training)', 'Ill patients'})
@@ -72,41 +85,43 @@ xlabel('state'); ylabel('state')
 
 %% HMM testing phase
 
-specificityTrain = 0;
+trainSpec = 0;
 for i = kTrain
     [~, logpH] = hmmdecode(hq{i}, transH, emisH);
     [~, logpP] = hmmdecode(hq{i}, transP, emisP);
     if logpH > logpP
-        specificityTrain = specificityTrain + 1/length(kTrain);
+        trainSpec = trainSpec + 1/length(kTrain);
     end
 end
 
-sensitivityTrain = 0;
+trainSens = 0;
 for i = kTrain
     [~, logpH] = hmmdecode(pq{i}, transH, emisH);
     [~, logpP] = hmmdecode(pq{i}, transP, emisP);
     if logpH < logpP
-        sensitivityTrain = sensitivityTrain + 1/length(kTrain);
+        trainSens = trainSens + 1/length(kTrain);
     end
 end
 
-specificityTest = 0;
+testSpec = 0;
 for i = kTest
     [~, logpH] = hmmdecode(hq{i}, transH, emisH);
     [~, logpP] = hmmdecode(hq{i}, transP, emisP);
     if logpH > logpP
-        specificityTest = specificityTest + 1/length(kTest);
+        testSpec = testSpec + 1/length(kTest);
     end
 end
 
-sensitivityTest = 0;
+testSens = 0;
 for i = kTest
     [~, logpH] = hmmdecode(pq{i}, transH, emisH);
     [~, logpP] = hmmdecode(pq{i}, transP, emisP);
     if logpH < logpP
-        sensitivityTest = sensitivityTest + 1/length(kTest);
+        testSens = testSens + 1/length(kTest);
     end
 end
+
+tempo2 = toc(tempo1);
 
 clear transGuess
 
@@ -121,6 +136,7 @@ for i = 1:nStates
    v = transGuess(i,:);
 end
 
+tempo3 = tic;
 % Health machine training
 [transH, emisH] = hmmtrain(hq(kTrain), transGuess, emisGuess,...
                            'algorithm', ALG,...
@@ -132,64 +148,79 @@ end
                            'algorithm', ALG,...
                            'tolerance', TOL,...
                            'maxiterations', MAX_ITER);
-figure(3)
-heatmap(transH); colorbar
-%axis square;
-title({'Transition matrix - Healthy',...
-      ['nQuant = ' , num2str(nQuant),...
-      '; nStates = ' , num2str(nStates)]})
-xlabel('state'); ylabel('state')
-
+                       
+% figure(3)
+% heatmap(transH); colorbar
+% %axis square;
+% title({'Transition matrix - Healthy',...
+%       ['nQuant = ' , num2str(nQuant),...
+%       '; nStates = ' , num2str(nStates)]})
+% xlabel('state'); ylabel('state')
+%
 % figure(2)
 % pcolor(emisH); colorbar
 % axis square; title({'Emission matrix (training)', 'Healthy patients'})
 % xlabel('state'); ylabel('state')
-
-figure(4)
-heatmap(transP); colorbar
-%axis square;
-title({'Transition matrix - Parikinson''s disease',...
-      ['nQuant = ' , num2str(nQuant),...
-      '; nStates = ' , num2str(nStates)]})
-xlabel('state'); ylabel('state')
-
+%
+% figure(4)
+% heatmap(transP); colorbar
+% %axis square;
+% title({'Transition matrix - Parikinson''s disease',...
+%       ['nQuant = ' , num2str(nQuant),...
+%       '; nStates = ' , num2str(nStates)]})
+% xlabel('state'); ylabel('state')
+%
 % figure(4)
 % pcolor(emisP); colorbar
 % axis square; title({'Emission matrix (training)', 'Ill patients'})
 % xlabel('state'); ylabel('state')
 
-specificityTrainPQ = 0;
+PQtrainSpec = 0;
 for i = kTrain
     [~, logpH] = hmmdecode(hq{i}, transH, emisH);
     [~, logpP] = hmmdecode(hq{i}, transP, emisP);
     if logpH > logpP
-        specificityTrainPQ = specificityTrainPQ + 1/length(kTrain);
+        PQtrainSpec = PQtrainSpec + 1/length(kTrain);
     end
 end
 
-sensitivityTrainPQ = 0;
+PQtrainSens = 0;
 for i = kTrain
     [~, logpH] = hmmdecode(pq{i}, transH, emisH);
     [~, logpP] = hmmdecode(pq{i}, transP, emisP);
     if logpH < logpP
-        sensitivityTrainPQ = sensitivityTrainPQ + 1/length(kTrain);
+        PQtrainSens = PQtrainSens + 1/length(kTrain);
     end
 end
 
-specificityTestPQ = 0;
+PQtestSpec = 0;
 for i = kTest
     [~, logpH] = hmmdecode(hq{i}, transH, emisH);
     [~, logpP] = hmmdecode(hq{i}, transP, emisP);
     if logpH > logpP
-        specificityTestPQ = specificityTestPQ + 1/length(kTest);
+        PQtestSpec = PQtestSpec + 1/length(kTest);
     end
 end
 
-sensitivityTestPQ = 0;
+PQtestSens = 0;
 for i = kTest
     [~, logpH] = hmmdecode(pq{i}, transH, emisH);
     [~, logpP] = hmmdecode(pq{i}, transP, emisP);
     if logpH < logpP
-        sensitivityTestPQ = sensitivityTestPQ + 1/length(kTest);
+        PQtestSens = PQtestSens + 1/length(kTest);
     end
 end
+
+tempo4 = toc(tempo3);
+
+
+clc
+kTrain
+kTest
+res1 = [trainSens trainSpec; testSens testSpec]
+res2 = [PQtrainSens PQtrainSpec; PQtestSens PQtestSpec]
+
+disp(['Time (random) ', num2str(tempo2+tElapsed), ' s'])
+disp(['Time (circulant) ', num2str(tempo4+tElapsed), ' s'])
+
+clear tElapsed logpH logpP q qs s TOL tStart v iRow i emisH emisP
